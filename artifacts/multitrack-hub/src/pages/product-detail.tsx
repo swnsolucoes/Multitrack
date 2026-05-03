@@ -9,8 +9,21 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/utils";
-import { Play, Pause, ShoppingCart, Heart, Download, Music, Clock, Activity, FileAudio, Share2, Shield, Loader2 } from "lucide-react";
+import { Play, Pause, ShoppingCart, Heart, Download, Music, Clock, Activity, FileAudio, Share2, Shield, Loader2, Youtube } from "lucide-react";
 import { useTranslation } from "react-i18next";
+
+function getYouTubeId(url: string): string | null {
+  if (!url) return null;
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([A-Za-z0-9_-]{11})/,
+    /youtube\.com\/shorts\/([A-Za-z0-9_-]{11})/,
+  ];
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m) return m[1];
+  }
+  return null;
+}
 
 export default function ProductDetail() {
   const params = useParams();
@@ -195,6 +208,22 @@ export default function ProductDetail() {
         <section className="container mx-auto px-4 py-16">
           <div className="grid md:grid-cols-3 gap-12">
             <div className="md:col-span-2 space-y-12">
+              {product.videoUrl && getYouTubeId(product.videoUrl) && (
+                <div>
+                  <h3 className="text-2xl font-bold mb-4 flex items-center gap-2">
+                    <Youtube className="h-6 w-6 text-red-500" /> Video
+                  </h3>
+                  <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-border shadow-lg">
+                    <iframe
+                      className="absolute inset-0 w-full h-full"
+                      src={`https://www.youtube.com/embed/${getYouTubeId(product.videoUrl)}?rel=0&modestbranding=1`}
+                      title={product.name}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                </div>
+              )}
               {product.description && (
                 <div>
                   <h3 className="text-2xl font-bold mb-4">{t("product.about")}</h3>

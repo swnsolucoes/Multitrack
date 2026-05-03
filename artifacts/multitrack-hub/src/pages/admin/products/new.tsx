@@ -27,6 +27,7 @@ const productSchema = z.object({
   duration: z.string().optional(),
   coverUrl: z.string().url().optional().or(z.literal("")),
   previewAudioUrl: z.string().url().optional().or(z.literal("")),
+  videoUrl: z.string().url().optional().or(z.literal("")),
   quality: z.enum(["premium", "standard", "backing_track", "demo"]),
   status: z.enum(["active", "inactive", "draft", "featured"]),
   isFeatured: z.boolean().default(false),
@@ -47,7 +48,7 @@ export default function AdminProductNew() {
     defaultValues: {
       name: "", artist: "", genre: "", description: "",
       price: 0, promoPrice: null, bpm: null, tonality: "", duration: "",
-      coverUrl: "", previewAudioUrl: "",
+      coverUrl: "", previewAudioUrl: "", videoUrl: "",
       quality: "premium", status: "draft",
       isFeatured: false, availableForSale: true, availableForSubscription: true, creditsRequired: 1,
     },
@@ -154,6 +155,16 @@ export default function AdminProductNew() {
                   <FormItem><FormLabel>Preview Audio URL</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
               </div>
+
+              <FormField control={form.control} name="videoUrl" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2">
+                    <span className="text-red-500">▶</span> YouTube Video URL (optional)
+                  </FormLabel>
+                  <FormControl><Input placeholder="https://www.youtube.com/watch?v=..." {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
 
               <div className="bg-secondary/30 p-4 rounded-xl space-y-4">
                 <h3 className="font-bold mb-2">Settings</h3>
