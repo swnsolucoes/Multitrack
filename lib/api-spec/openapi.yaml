@@ -3,20 +3,44 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: MultiTrack Hub API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
+  - name: products
+    description: Product catalog
+  - name: categories
+    description: Product categories
+  - name: cart
+    description: Shopping cart
+  - name: orders
+    description: Orders and purchases
+  - name: downloads
+    description: Protected download management
+  - name: subscriptions
+    description: Premium subscriptions
+  - name: credits
+    description: Credit ledger
+  - name: rateios
+    description: Collective purchase (rateio)
+  - name: wishlist
+    description: User wishlist
+  - name: coupons
+    description: Coupon codes
+  - name: admin
+    description: Admin panel
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +48,1061 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ── Auth ──────────────────────────────────────────────────────────────────
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "409":
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── Categories ────────────────────────────────────────────────────────────
+  /categories:
+    get:
+      operationId: listCategories
+      tags: [categories]
+      summary: List all categories
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+
+  # ── Products ──────────────────────────────────────────────────────────────
+  /products:
+    get:
+      operationId: listProducts
+      tags: [products]
+      summary: List/search products in the catalog
+      parameters:
+        - name: q
+          in: query
+          description: Search query (name, artist, tags)
+          schema:
+            type: string
+        - name: categoryId
+          in: query
+          schema:
+            type: integer
+        - name: genre
+          in: query
+          schema:
+            type: string
+        - name: minBpm
+          in: query
+          schema:
+            type: integer
+        - name: maxBpm
+          in: query
+          schema:
+            type: integer
+        - name: minPrice
+          in: query
+          schema:
+            type: number
+        - name: maxPrice
+          in: query
+          schema:
+            type: number
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [recent, popular, price_asc, price_desc, name_asc]
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductListResponse"
+
+  /products/featured:
+    get:
+      operationId: getFeaturedProducts
+      tags: [products]
+      summary: Get featured products for homepage
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+
+  /products/bestsellers:
+    get:
+      operationId: getBestsellers
+      tags: [products]
+      summary: Get bestselling products
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+
+  /products/{id}:
+    get:
+      operationId: getProduct
+      tags: [products]
+      summary: Get product details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /products/{id}/related:
+    get:
+      operationId: getRelatedProducts
+      tags: [products]
+      summary: Get related products
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+
+  # ── Cart ──────────────────────────────────────────────────────────────────
+  /cart:
+    get:
+      operationId: getCart
+      tags: [cart]
+      summary: Get current cart
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cart"
+
+  /cart/items:
+    post:
+      operationId: addToCart
+      tags: [cart]
+      summary: Add item to cart
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddToCartBody"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cart"
+
+  /cart/items/{itemId}:
+    delete:
+      operationId: removeFromCart
+      tags: [cart]
+      summary: Remove item from cart
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cart"
+
+  /cart/coupon:
+    post:
+      operationId: applyCoupon
+      tags: [cart]
+      summary: Apply coupon to cart
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApplyCouponBody"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cart"
+        "400":
+          description: Invalid coupon
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /cart/coupon/remove:
+    post:
+      operationId: removeCoupon
+      tags: [cart]
+      summary: Remove coupon from cart
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cart"
+
+  # ── Orders ────────────────────────────────────────────────────────────────
+  /orders:
+    get:
+      operationId: listOrders
+      tags: [orders]
+      summary: List my orders
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+    post:
+      operationId: createOrder
+      tags: [orders]
+      summary: Create order from cart
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrderBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+
+  /orders/{id}:
+    get:
+      operationId: getOrder
+      tags: [orders]
+      summary: Get order details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderDetail"
+
+  /orders/{id}/pay:
+    post:
+      operationId: payOrder
+      tags: [orders]
+      summary: Initiate payment for an order
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PayOrderBody"
+      responses:
+        "200":
+          description: Payment initiated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentResponse"
+
+  # ── Downloads ─────────────────────────────────────────────────────────────
+  /downloads:
+    get:
+      operationId: listDownloads
+      tags: [downloads]
+      summary: List my download grants
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DownloadGrant"
+
+  /downloads/{grantId}/link:
+    post:
+      operationId: generateDownloadLink
+      tags: [downloads]
+      summary: Generate a temporary signed download link
+      parameters:
+        - name: grantId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DownloadLink"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── Subscriptions ─────────────────────────────────────────────────────────
+  /subscriptions/plans:
+    get:
+      operationId: listPlans
+      tags: [subscriptions]
+      summary: List available subscription plans
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Plan"
+
+  /subscriptions/me:
+    get:
+      operationId: getMySubscription
+      tags: [subscriptions]
+      summary: Get my current subscription
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+        "404":
+          description: No active subscription
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: subscribe
+      tags: [subscriptions]
+      summary: Subscribe to a plan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubscribeBody"
+      responses:
+        "201":
+          description: Subscribed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+    delete:
+      operationId: cancelSubscription
+      tags: [subscriptions]
+      summary: Cancel subscription
+      responses:
+        "200":
+          description: Cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  # ── Credits ───────────────────────────────────────────────────────────────
+  /credits:
+    get:
+      operationId: getCreditBalance
+      tags: [credits]
+      summary: Get current credit balance and ledger
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreditBalance"
+
+  /credits/use:
+    post:
+      operationId: useCredits
+      tags: [credits]
+      summary: Use credits to download a product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UseCreditsBody"
+      responses:
+        "200":
+          description: Credits used, download granted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DownloadGrant"
+
+  # ── Rateios ───────────────────────────────────────────────────────────────
+  /rateios:
+    get:
+      operationId: listRateios
+      tags: [rateios]
+      summary: List rateios
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [suggested, in_quotation, open, goal_reached, awaiting_payment, payment_confirmed, in_progress, completed, cancelled, refunded]
+        - name: genre
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Rateio"
+    post:
+      operationId: suggestRateio
+      tags: [rateios]
+      summary: Suggest a new rateio
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SuggestRateioBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Rateio"
+
+  /rateios/{id}:
+    get:
+      operationId: getRateio
+      tags: [rateios]
+      summary: Get rateio details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RateioDetail"
+
+  /rateios/{id}/join:
+    post:
+      operationId: joinRateio
+      tags: [rateios]
+      summary: Join a rateio
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Joined
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RateioParticipant"
+
+  /rateios/{id}/comments:
+    get:
+      operationId: getRateioComments
+      tags: [rateios]
+      summary: Get rateio comments/updates
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RateioComment"
+    post:
+      operationId: addRateioComment
+      tags: [rateios]
+      summary: Add comment to rateio
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddCommentBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RateioComment"
+
+  # ── Wishlist ──────────────────────────────────────────────────────────────
+  /wishlist:
+    get:
+      operationId: getWishlist
+      tags: [wishlist]
+      summary: Get my wishlist
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WishlistItem"
+
+  /wishlist/{productId}:
+    post:
+      operationId: addToWishlist
+      tags: [wishlist]
+      summary: Add product to wishlist
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "201":
+          description: Added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WishlistItem"
+    delete:
+      operationId: removeFromWishlist
+      tags: [wishlist]
+      summary: Remove from wishlist
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  # ── Admin ─────────────────────────────────────────────────────────────────
+  /admin/dashboard:
+    get:
+      operationId: getAdminDashboard
+      tags: [admin]
+      summary: Admin dashboard metrics
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [7d, 30d, 90d, all]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardMetrics"
+
+  /admin/products:
+    get:
+      operationId: adminListProducts
+      tags: [admin]
+      summary: Admin list all products
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, inactive, draft, featured]
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductListResponse"
+    post:
+      operationId: adminCreateProduct
+      tags: [admin]
+      summary: Create a new product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminProductBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductDetail"
+
+  /admin/products/{id}:
+    put:
+      operationId: adminUpdateProduct
+      tags: [admin]
+      summary: Update a product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminProductBody"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductDetail"
+    delete:
+      operationId: adminDeleteProduct
+      tags: [admin]
+      summary: Delete a product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /admin/orders:
+    get:
+      operationId: adminListOrders
+      tags: [admin]
+      summary: Admin list all orders
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, paid, cancelled, refunded, chargeback]
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+
+  /admin/users:
+    get:
+      operationId: adminListUsers
+      tags: [admin]
+      summary: Admin list users
+      parameters:
+        - name: role
+          in: query
+          schema:
+            type: string
+            enum: [visitor, buyer, member, premium, admin, support]
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserSummary"
+
+  /admin/users/{id}:
+    get:
+      operationId: adminGetUser
+      tags: [admin]
+      summary: Admin get user details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserDetail"
+    patch:
+      operationId: adminUpdateUser
+      tags: [admin]
+      summary: Update user status or role
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUpdateUserBody"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSummary"
+
+  /admin/rateios:
+    get:
+      operationId: adminListRateios
+      tags: [admin]
+      summary: Admin list all rateios
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Rateio"
+
+  /admin/rateios/{id}/status:
+    patch:
+      operationId: adminUpdateRateioStatus
+      tags: [admin]
+      summary: Admin update rateio status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminRateioStatusBody"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Rateio"
+
+  /admin/coupons:
+    get:
+      operationId: adminListCoupons
+      tags: [admin]
+      summary: Admin list coupons
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Coupon"
+    post:
+      operationId: adminCreateCoupon
+      tags: [admin]
+      summary: Create a coupon
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCouponBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Coupon"
+
+  /admin/coupons/{id}:
+    patch:
+      operationId: adminUpdateCoupon
+      tags: [admin]
+      summary: Update a coupon
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCouponBody"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Coupon"
+
+  /admin/credits/adjust:
+    post:
+      operationId: adminAdjustCredits
+      tags: [admin]
+      summary: Admin credit adjustment for a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminCreditAdjustBody"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /admin/downloads/{grantId}/reissue:
+    post:
+      operationId: adminReissueDownload
+      tags: [admin]
+      summary: Admin reissue download link for a grant
+      parameters:
+        - name: grantId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DownloadLink"
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +1110,909 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required: [message]
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        details:
+          type: string
+      required: [error]
+
+    # ── Auth ──────────────────────────────────────────────────────────────
+    RegisterBody:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+      required: [name, email, password]
+
+    LoginBody:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required: [email, password]
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        token:
+          type: string
+      required: [user, token]
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [buyer, member, premium, admin, support]
+        avatarUrl:
+          type: string
+          nullable: true
+        isBlocked:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, name, email, role, isBlocked, createdAt]
+
+    UserSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+        isBlocked:
+          type: boolean
+        ordersCount:
+          type: integer
+        totalSpent:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, name, email, role, isBlocked, ordersCount, totalSpent, createdAt]
+
+    UserDetail:
+      allOf:
+        - $ref: "#/components/schemas/UserSummary"
+        - type: object
+          properties:
+            subscription:
+              $ref: "#/components/schemas/Subscription"
+              nullable: true
+            creditBalance:
+              type: integer
+            recentOrders:
+              type: array
+              items:
+                $ref: "#/components/schemas/Order"
+            notes:
+              type: string
+              nullable: true
+
+    AdminUpdateUserBody:
+      type: object
+      properties:
+        role:
+          type: string
+          enum: [buyer, member, premium, admin, support]
+        isBlocked:
+          type: boolean
+        notes:
+          type: string
+
+    # ── Category ──────────────────────────────────────────────────────────
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        icon:
+          type: string
+          nullable: true
+        productCount:
+          type: integer
+      required: [id, name, slug, productCount]
+
+    # ── Product ───────────────────────────────────────────────────────────
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        artist:
+          type: string
+        genre:
+          type: string
+        coverUrl:
+          type: string
+          nullable: true
+        price:
+          type: number
+        promoPrice:
+          type: number
+          nullable: true
+        bpm:
+          type: integer
+          nullable: true
+        tonality:
+          type: string
+          nullable: true
+        duration:
+          type: string
+          nullable: true
+        quality:
+          type: string
+          enum: [premium, standard, backing_track, demo]
+        status:
+          type: string
+          enum: [active, inactive, draft, featured]
+        isFeatured:
+          type: boolean
+        creditsRequired:
+          type: integer
+        availableForSubscription:
+          type: boolean
+        totalSales:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, name, artist, genre, price, quality, status, isFeatured, creditsRequired, availableForSubscription, totalSales, createdAt]
+
+    ProductDetail:
+      allOf:
+        - $ref: "#/components/schemas/Product"
+        - type: object
+          properties:
+            description:
+              type: string
+            tracks:
+              type: array
+              items:
+                type: string
+            formats:
+              type: array
+              items:
+                type: string
+            fileSizeMb:
+              type: number
+              nullable: true
+            previewAudioUrl:
+              type: string
+              nullable: true
+            videoUrl:
+              type: string
+              nullable: true
+            tags:
+              type: array
+              items:
+                type: string
+            licenceSummary:
+              type: string
+              nullable: true
+            category:
+              $ref: "#/components/schemas/Category"
+              nullable: true
+            averageRating:
+              type: number
+              nullable: true
+            reviewCount:
+              type: integer
+
+    ProductListResponse:
+      type: object
+      properties:
+        products:
+          type: array
+          items:
+            $ref: "#/components/schemas/Product"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required: [products, total, page, limit]
+
+    AdminProductBody:
+      type: object
+      properties:
+        name:
+          type: string
+        artist:
+          type: string
+        genre:
+          type: string
+        categoryId:
+          type: integer
+          nullable: true
+        tonality:
+          type: string
+          nullable: true
+        bpm:
+          type: integer
+          nullable: true
+        duration:
+          type: string
+          nullable: true
+        description:
+          type: string
+        tracks:
+          type: array
+          items:
+            type: string
+        formats:
+          type: array
+          items:
+            type: string
+        fileSizeMb:
+          type: number
+          nullable: true
+        coverUrl:
+          type: string
+          nullable: true
+        previewAudioUrl:
+          type: string
+          nullable: true
+        videoUrl:
+          type: string
+          nullable: true
+        tags:
+          type: array
+          items:
+            type: string
+        price:
+          type: number
+        promoPrice:
+          type: number
+          nullable: true
+        promoPriceStartAt:
+          type: string
+          format: date-time
+          nullable: true
+        promoPriceEndAt:
+          type: string
+          format: date-time
+          nullable: true
+        quality:
+          type: string
+          enum: [premium, standard, backing_track, demo]
+        status:
+          type: string
+          enum: [active, inactive, draft, featured]
+        isFeatured:
+          type: boolean
+        availableForSale:
+          type: boolean
+        availableForSubscription:
+          type: boolean
+        creditsRequired:
+          type: integer
+        licenceSummary:
+          type: string
+          nullable: true
+      required: [name, artist, genre, description, price, quality, status]
+
+    # ── Cart ──────────────────────────────────────────────────────────────
+    AddToCartBody:
+      type: object
+      properties:
+        productId:
+          type: integer
+      required: [productId]
+
+    ApplyCouponBody:
+      type: object
+      properties:
+        code:
+          type: string
+      required: [code]
+
+    CartItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        product:
+          $ref: "#/components/schemas/Product"
+        price:
+          type: number
+      required: [id, product, price]
+
+    Cart:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CartItem"
+        subtotal:
+          type: number
+        discount:
+          type: number
+        total:
+          type: number
+        couponCode:
+          type: string
+          nullable: true
+        couponDiscount:
+          type: number
+      required: [items, subtotal, discount, total]
+
+    # ── Orders ────────────────────────────────────────────────────────────
+    CreateOrderBody:
+      type: object
+      properties:
+        paymentMethod:
+          type: string
+          enum: [pix, credit_card]
+        couponCode:
+          type: string
+          nullable: true
+      required: [paymentMethod]
+
+    PayOrderBody:
+      type: object
+      properties:
+        paymentMethod:
+          type: string
+          enum: [pix, credit_card]
+        cardToken:
+          type: string
+          nullable: true
+      required: [paymentMethod]
+
+    PaymentResponse:
+      type: object
+      properties:
+        orderId:
+          type: integer
+        status:
+          type: string
+        pixCode:
+          type: string
+          nullable: true
+        pixQrCode:
+          type: string
+          nullable: true
+        checkoutUrl:
+          type: string
+          nullable: true
+      required: [orderId, status]
+
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+        status:
+          type: string
+          enum: [pending, paid, cancelled, refunded, chargeback]
+        paymentMethod:
+          type: string
+        subtotal:
+          type: number
+        discount:
+          type: number
+        total:
+          type: number
+        couponCode:
+          type: string
+          nullable: true
+        itemCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, status, paymentMethod, subtotal, discount, total, itemCount, createdAt]
+
+    OrderItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        product:
+          $ref: "#/components/schemas/Product"
+        price:
+          type: number
+        downloadGrant:
+          $ref: "#/components/schemas/DownloadGrant"
+          nullable: true
+      required: [id, product, price]
+
+    OrderDetail:
+      allOf:
+        - $ref: "#/components/schemas/Order"
+        - type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/OrderItem"
+            user:
+              $ref: "#/components/schemas/UserSummary"
+
+    # ── Downloads ─────────────────────────────────────────────────────────
+    DownloadGrant:
+      type: object
+      properties:
+        id:
+          type: integer
+        productId:
+          type: integer
+        productName:
+          type: string
+        productArtist:
+          type: string
+        coverUrl:
+          type: string
+          nullable: true
+        source:
+          type: string
+          enum: [purchase, credit, rateio]
+        downloadCount:
+          type: integer
+        lastDownloadAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, productId, productName, productArtist, source, downloadCount, createdAt]
+
+    DownloadLink:
+      type: object
+      properties:
+        url:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+      required: [url, expiresAt]
+
+    # ── Subscriptions ─────────────────────────────────────────────────────
+    Plan:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        creditsPerMonth:
+          type: integer
+        maxAccumulatedCredits:
+          type: integer
+        features:
+          type: array
+          items:
+            type: string
+        isActive:
+          type: boolean
+      required: [id, name, description, price, creditsPerMonth, maxAccumulatedCredits, features, isActive]
+
+    SubscribeBody:
+      type: object
+      properties:
+        planId:
+          type: integer
+        paymentMethod:
+          type: string
+          enum: [pix, credit_card]
+      required: [planId, paymentMethod]
+
+    Subscription:
+      type: object
+      properties:
+        id:
+          type: integer
+        planId:
+          type: integer
+        planName:
+          type: string
+        status:
+          type: string
+          enum: [active, cancelled, past_due, paused]
+        currentPeriodStart:
+          type: string
+          format: date-time
+        currentPeriodEnd:
+          type: string
+          format: date-time
+        cancelAtPeriodEnd:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, planId, planName, status, currentPeriodStart, currentPeriodEnd, cancelAtPeriodEnd, createdAt]
+
+    # ── Credits ───────────────────────────────────────────────────────────
+    CreditEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [earned, used, refunded, adjusted, expired]
+        amount:
+          type: integer
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, type, amount, description, createdAt]
+
+    CreditBalance:
+      type: object
+      properties:
+        balance:
+          type: integer
+        maxBalance:
+          type: integer
+        ledger:
+          type: array
+          items:
+            $ref: "#/components/schemas/CreditEntry"
+      required: [balance, maxBalance, ledger]
+
+    UseCreditsBody:
+      type: object
+      properties:
+        productId:
+          type: integer
+      required: [productId]
+
+    AdminCreditAdjustBody:
+      type: object
+      properties:
+        userId:
+          type: integer
+        amount:
+          type: integer
+        description:
+          type: string
+      required: [userId, amount, description]
+
+    # ── Rateios ───────────────────────────────────────────────────────────
+    SuggestRateioBody:
+      type: object
+      properties:
+        songName:
+          type: string
+        artist:
+          type: string
+        reference:
+          type: string
+          nullable: true
+        justification:
+          type: string
+          nullable: true
+        genre:
+          type: string
+          nullable: true
+      required: [songName, artist]
+
+    Rateio:
+      type: object
+      properties:
+        id:
+          type: integer
+        songName:
+          type: string
+        artist:
+          type: string
+        genre:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [suggested, in_quotation, open, goal_reached, awaiting_payment, payment_confirmed, in_progress, completed, cancelled, refunded]
+        targetAmount:
+          type: number
+          nullable: true
+        amountPerParticipant:
+          type: number
+          nullable: true
+        minParticipants:
+          type: integer
+          nullable: true
+        currentParticipants:
+          type: integer
+        minPercentage:
+          type: number
+          nullable: true
+        deadline:
+          type: string
+          format: date-time
+          nullable: true
+        coverUrl:
+          type: string
+          nullable: true
+        isParticipating:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, songName, artist, status, currentParticipants, isParticipating, createdAt]
+
+    RateioParticipant:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        userName:
+          type: string
+        paymentStatus:
+          type: string
+          enum: [pending, paid, overdue, refunded]
+        joinedAt:
+          type: string
+          format: date-time
+      required: [id, userId, userName, paymentStatus, joinedAt]
+
+    RateioComment:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        userName:
+          type: string
+        isAdmin:
+          type: boolean
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, userId, userName, isAdmin, content, createdAt]
+
+    RateioDetail:
+      allOf:
+        - $ref: "#/components/schemas/Rateio"
+        - type: object
+          properties:
+            justification:
+              type: string
+              nullable: true
+            participants:
+              type: array
+              items:
+                $ref: "#/components/schemas/RateioParticipant"
+            comments:
+              type: array
+              items:
+                $ref: "#/components/schemas/RateioComment"
+            product:
+              $ref: "#/components/schemas/Product"
+              nullable: true
+
+    AddCommentBody:
+      type: object
+      properties:
+        content:
+          type: string
+      required: [content]
+
+    AdminRateioStatusBody:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [in_quotation, open, goal_reached, awaiting_payment, payment_confirmed, in_progress, completed, cancelled, refunded]
+        targetAmount:
+          type: number
+          nullable: true
+        amountPerParticipant:
+          type: number
+          nullable: true
+        minParticipants:
+          type: integer
+          nullable: true
+        minPercentage:
+          type: number
+          nullable: true
+        deadline:
+          type: string
+          format: date-time
+          nullable: true
+        cancelReason:
+          type: string
+          nullable: true
+      required: [status]
+
+    # ── Wishlist ──────────────────────────────────────────────────────────
+    WishlistItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        product:
+          $ref: "#/components/schemas/Product"
+        addedAt:
+          type: string
+          format: date-time
+      required: [id, product, addedAt]
+
+    # ── Coupons ───────────────────────────────────────────────────────────
+    Coupon:
+      type: object
+      properties:
+        id:
+          type: integer
+        code:
+          type: string
+        type:
+          type: string
+          enum: [percentage, fixed]
+        value:
+          type: number
+        minOrderValue:
+          type: number
+          nullable: true
+        maxUsesTotal:
+          type: integer
+          nullable: true
+        maxUsesPerUser:
+          type: integer
+          nullable: true
+        usedCount:
+          type: integer
+        isActive:
+          type: boolean
+        startsAt:
+          type: string
+          format: date-time
+          nullable: true
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, code, type, value, usedCount, isActive, createdAt]
+
+    CreateCouponBody:
+      type: object
+      properties:
+        code:
+          type: string
+        type:
+          type: string
+          enum: [percentage, fixed]
+        value:
+          type: number
+        minOrderValue:
+          type: number
+          nullable: true
+        maxUsesTotal:
+          type: integer
+          nullable: true
+        maxUsesPerUser:
+          type: integer
+          nullable: true
+        isActive:
+          type: boolean
+        startsAt:
+          type: string
+          format: date-time
+          nullable: true
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+      required: [code, type, value]
+
+    # ── Admin Dashboard ───────────────────────────────────────────────────
+    DashboardMetrics:
+      type: object
+      properties:
+        totalRevenue:
+          type: number
+        revenueByChannel:
+          type: object
+          properties:
+            singlePurchase:
+              type: number
+            subscription:
+              type: number
+            bundle:
+              type: number
+            rateio:
+              type: number
+          required: [singlePurchase, subscription, bundle, rateio]
+        mrr:
+          type: number
+        churnRate:
+          type: number
+        averageOrderValue:
+          type: number
+        totalOrders:
+          type: integer
+        totalUsers:
+          type: integer
+        premiumUsers:
+          type: integer
+        totalDownloads:
+          type: integer
+        topProducts:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              name:
+                type: string
+              artist:
+                type: string
+              sales:
+                type: integer
+              revenue:
+                type: number
+            required: [id, name, artist, sales, revenue]
+        rateioStats:
+          type: object
+          properties:
+            open:
+              type: integer
+            completed:
+              type: integer
+            cancelled:
+              type: integer
+          required: [open, completed, cancelled]
+        recentOrders:
+          type: array
+          items:
+            $ref: "#/components/schemas/Order"
+      required: [totalRevenue, revenueByChannel, mrr, churnRate, averageOrderValue, totalOrders, totalUsers, premiumUsers, totalDownloads, topProducts, rateioStats, recentOrders]
