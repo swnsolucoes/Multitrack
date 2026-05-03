@@ -13,18 +13,18 @@ import { formatCurrency } from "@/lib/utils";
 import { Loader2, ArrowLeft, Save } from "lucide-react";
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { ptBR, enUS } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
 
 export default function AdminUserDetail() {
   const { id } = useParams();
   const userId = parseInt(id || "0");
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language === "pt" ? ptBR : enUS;
 
-  const { data: user, isLoading } = useAdminGetUser(userId, {
-    query: { enabled: !!userId }
-  });
-
+  const { data: user, isLoading } = useAdminGetUser(userId, { query: { enabled: !!userId } });
   const updateUser = useAdminUpdateUser();
 
   const [role, setRole] = useState<string>("buyer");
@@ -32,36 +32,25 @@ export default function AdminUserDetail() {
   const [notes, setNotes] = useState("");
 
   useEffect(() => {
-    if (user) {
-      setRole(user.role);
-      setIsBlocked(user.isBlocked);
-      setNotes(user.notes || "");
-    }
+    if (user) { setRole(user.role); setIsBlocked(user.isBlocked); setNotes(user.notes || ""); }
   }, [user]);
 
   const handleSave = () => {
-    updateUser.mutate(
-      { userId, data: { role: role as any, isBlocked, notes } },
-      {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getAdminGetUserQueryKey(userId) });
-          toast({ title: "Usuário atualizado com sucesso." });
-        }
-      }
-    );
+    updateUser.mutate({ userId, data: { role: role as any, isBlocked, notes } }, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getAdminGetUserQueryKey(userId) });
+        toast({ title: t("common.save") });
+      },
+    });
   };
 
-  if (isLoading) {
-    return (
-      <AdminLayout>
-        <div className="flex items-center justify-center h-full min-h-[400px]">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      </AdminLayout>
-    );
-  }
+  if (isLoading) return (
+    <AdminLayout><div className="flex items-center justify-center h-full min-h-[400px]">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div></AdminLayout>
+  );
 
-  if (!user) return <AdminLayout><div>Usuário não encontrado.</div></AdminLayout>;
+  if (!user) return <AdminLayout><div>{t("common.not_found_title")}</div></AdminLayout>;
 
   return (
     <AdminLayout>
@@ -79,45 +68,39 @@ export default function AdminUserDetail() {
         <div className="grid md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-6">
             <div className="bg-card border border-border rounded-xl p-6">
-              <h3 className="font-bold text-lg mb-4">Configurações de Acesso</h3>
+              <h3 className="font-bold text-lg mb-4">Access Settings</h3>
               <div className="space-y-6">
                 <div className="space-y-3">
-                  <Label>Nível de Acesso (Role)</Label>
+                  <Label>Role</Label>
                   <Select value={role} onValueChange={setRole}>
-                    <SelectTrigger className="w-full sm:w-64 bg-background">
-                      <SelectValue />
-                    </SelectTrigger>
+                    <SelectTrigger className="w-full sm:w-64 bg-background"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="buyer">Comprador</SelectItem>
-                      <SelectItem value="member">Membro</SelectItem>
+                      <SelectItem value="buyer">Buyer</SelectItem>
+                      <SelectItem value="member">Member</SelectItem>
                       <SelectItem value="premium">Premium</SelectItem>
-                      <SelectItem value="admin">Administrador</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-secondary/30">
                   <div>
-                    <Label className="font-bold">Bloquear Usuário</Label>
-                    <p className="text-xs text-muted-foreground mt-1">Impede o login e acesso à plataforma.</p>
+                    <Label className="font-bold">Block User</Label>
+                    <p className="text-xs text-muted-foreground mt-1">Prevents login and platform access.</p>
                   </div>
                   <Switch checked={isBlocked} onCheckedChange={setIsBlocked} />
                 </div>
 
                 <div className="space-y-3">
-                  <Label>Anotações Internas</Label>
-                  <Textarea 
-                    placeholder="Notas visíveis apenas para administradores..." 
-                    className="min-h-[100px] bg-background"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                  />
+                  <Label>Internal Notes</Label>
+                  <Textarea placeholder="Notes visible to admins only..."
+                    className="min-h-[100px] bg-background" value={notes} onChange={(e) => setNotes(e.target.value)} />
                 </div>
 
                 <div className="pt-2">
                   <Button onClick={handleSave} disabled={updateUser.isPending}>
                     {updateUser.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                    Salvar Alterações
+                    {t("common.save")}
                   </Button>
                 </div>
               </div>
@@ -125,13 +108,13 @@ export default function AdminUserDetail() {
 
             {user.recentOrders && user.recentOrders.length > 0 && (
               <div className="bg-card border border-border rounded-xl p-6">
-                <h3 className="font-bold text-lg mb-4">Pedidos Recentes</h3>
+                <h3 className="font-bold text-lg mb-4">{t("orders.title")}</h3>
                 <div className="space-y-4">
                   {user.recentOrders.map(order => (
                     <div key={order.id} className="flex items-center justify-between p-3 border border-border rounded-lg bg-secondary/30">
                       <div>
-                        <div className="font-bold">Pedido #{order.id.toString().padStart(5, '0')}</div>
-                        <div className="text-xs text-muted-foreground">{format(new Date(order.createdAt), "dd MMM yyyy")}</div>
+                        <div className="font-bold">#{order.id.toString().padStart(5, "0")}</div>
+                        <div className="text-xs text-muted-foreground">{format(new Date(order.createdAt), "dd MMM yyyy", { locale })}</div>
                       </div>
                       <div className="text-right">
                         <div className="font-bold text-primary">{formatCurrency(order.total)}</div>
@@ -146,22 +129,22 @@ export default function AdminUserDetail() {
 
           <div className="space-y-6">
             <div className="bg-card border border-border rounded-xl p-6">
-              <h3 className="font-bold text-lg mb-4">Resumo</h3>
+              <h3 className="font-bold text-lg mb-4">Summary</h3>
               <div className="space-y-4 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Cadastrado em</span>
+                  <span className="text-muted-foreground">Joined</span>
                   <span className="font-medium">{format(new Date(user.createdAt), "dd/MM/yyyy")}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Total Gasto</span>
+                  <span className="text-muted-foreground">Total Spent</span>
                   <span className="font-bold text-primary">{formatCurrency(user.totalSpent)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Pedidos</span>
+                  <span className="text-muted-foreground">{t("admin.orders")}</span>
                   <span className="font-medium">{user.ordersCount}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Créditos Atuais</span>
+                  <span className="text-muted-foreground">{t("admin.credits")}</span>
                   <span className="font-medium">{user.creditBalance || 0}</span>
                 </div>
               </div>
@@ -170,15 +153,15 @@ export default function AdminUserDetail() {
             {user.subscription && (
               <div className="bg-card border border-border rounded-xl p-6">
                 <h3 className="font-bold text-lg mb-4 flex items-center justify-between">
-                  Assinatura
-                  <Badge className={user.subscription.status === 'active' ? "bg-green-500/20 text-green-500" : ""}>
+                  {t("subscription.title")}
+                  <Badge className={user.subscription.status === "active" ? "bg-green-500/20 text-green-500" : ""}>
                     {user.subscription.status}
                   </Badge>
                 </h3>
                 <div className="space-y-2 text-sm">
                   <div className="font-bold text-primary">{user.subscription.planName}</div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Renovação:</span>
+                    <span className="text-muted-foreground">{t("subscription.current_period")}:</span>
                     <span>{format(new Date(user.subscription.currentPeriodEnd), "dd/MM/yyyy")}</span>
                   </div>
                 </div>

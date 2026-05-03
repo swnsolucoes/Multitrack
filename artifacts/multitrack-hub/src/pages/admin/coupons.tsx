@@ -16,12 +16,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Loader2, Plus, Ticket } from "lucide-react";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
 
 const couponSchema = z.object({
-  code: z.string().min(3, "Código obrigatório"),
+  code: z.string().min(3),
   type: z.enum(["percentage", "fixed"]),
-  value: z.coerce.number().min(0.1, "Valor inválido"),
+  value: z.coerce.number().min(0.1),
   maxUsesTotal: z.coerce.number().optional().nullable(),
   isActive: z.boolean().default(true),
 });
@@ -30,35 +30,25 @@ export default function AdminCoupons() {
   const { data, isLoading } = useAdminListCoupons();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const createCoupon = useAdminCreateCoupon();
   const [open, setOpen] = useState(false);
 
   const form = useForm<z.infer<typeof couponSchema>>({
     resolver: zodResolver(couponSchema),
-    defaultValues: {
-      code: "",
-      type: "percentage",
-      value: 10,
-      maxUsesTotal: null,
-      isActive: true,
-    }
+    defaultValues: { code: "", type: "percentage", value: 10, maxUsesTotal: null, isActive: true },
   });
 
   const onSubmit = (values: z.infer<typeof couponSchema>) => {
-    createCoupon.mutate(
-      { data: values as any },
-      {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getAdminListCouponsQueryKey() });
-          toast({ title: "Cupom criado com sucesso" });
-          setOpen(false);
-          form.reset();
-        },
-        onError: () => {
-          toast({ variant: "destructive", title: "Erro ao criar cupom" });
-        }
-      }
-    );
+    createCoupon.mutate({ data: values as any }, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getAdminListCouponsQueryKey() });
+        toast({ title: t("admin.coupons") });
+        setOpen(false);
+        form.reset();
+      },
+      onError: () => { toast({ variant: "destructive", title: t("common.error") }); },
+    });
   };
 
   return (
@@ -66,37 +56,37 @@ export default function AdminCoupons() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Cupons de Desconto</h1>
-            <p className="text-muted-foreground">Gerencie os cupons da plataforma.</p>
+            <h1 className="text-3xl font-bold tracking-tight">{t("admin.coupons")}</h1>
           </div>
-          
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button><Plus className="mr-2 h-4 w-4" /> Novo Cupom</Button>
+              <Button><Plus className="mr-2 h-4 w-4" /> {t("common.create")}</Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
-                <DialogTitle>Criar Novo Cupom</DialogTitle>
+                <DialogTitle>{t("common.create")}</DialogTitle>
               </DialogHeader>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   <FormField control={form.control} name="code" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Código</FormLabel>
-                      <FormControl><Input placeholder="EX: BLACKFRIDAY20" {...field} className="uppercase" onChange={e => field.onChange(e.target.value.toUpperCase())} /></FormControl>
+                      <FormLabel>Code</FormLabel>
+                      <FormControl>
+                        <Input placeholder="BLACKFRIDAY20" {...field} className="uppercase"
+                          onChange={e => field.onChange(e.target.value.toUpperCase())} />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
-                  
                   <div className="grid grid-cols-2 gap-4">
                     <FormField control={form.control} name="type" render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Tipo</FormLabel>
+                        <FormLabel>Type</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                           <SelectContent>
-                            <SelectItem value="percentage">Porcentagem (%)</SelectItem>
-                            <SelectItem value="fixed">Valor Fixo (R$)</SelectItem>
+                            <SelectItem value="percentage">% Percentage</SelectItem>
+                            <SelectItem value="fixed">R$ Fixed</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -104,24 +94,22 @@ export default function AdminCoupons() {
                     )} />
                     <FormField control={form.control} name="value" render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Valor</FormLabel>
+                        <FormLabel>Value</FormLabel>
                         <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )} />
                   </div>
-                  
                   <FormField control={form.control} name="maxUsesTotal" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Limite de Usos (Opcional)</FormLabel>
-                      <FormControl><Input type="number" {...field} value={field.value || ''} placeholder="Ex: 100" /></FormControl>
+                      <FormLabel>Max uses (optional)</FormLabel>
+                      <FormControl><Input type="number" {...field} value={field.value || ""} placeholder="100" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
-
                   <Button type="submit" className="w-full" disabled={createCoupon.isPending}>
                     {createCoupon.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Ticket className="h-4 w-4 mr-2" />}
-                    Criar Cupom
+                    {t("common.create")}
                   </Button>
                 </form>
               </Form>
@@ -133,42 +121,34 @@ export default function AdminCoupons() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Código</TableHead>
-                <TableHead>Desconto</TableHead>
-                <TableHead>Usos</TableHead>
-                <TableHead>Validade</TableHead>
+                <TableHead>Code</TableHead>
+                <TableHead>Discount</TableHead>
+                <TableHead>Uses</TableHead>
+                <TableHead>Expires</TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-10">
-                    <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
-                  </TableCell>
-                </TableRow>
+                <TableRow><TableCell colSpan={5} className="text-center py-10">
+                  <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
+                </TableCell></TableRow>
               ) : !data || data.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
-                    Nenhum cupom encontrado.
-                  </TableCell>
-                </TableRow>
+                <TableRow><TableCell colSpan={5} className="text-center py-10 text-muted-foreground">—</TableCell></TableRow>
               ) : (
                 data.map((coupon) => (
                   <TableRow key={coupon.id}>
                     <TableCell className="font-bold font-mono text-primary">{coupon.code}</TableCell>
                     <TableCell>
-                      {coupon.type === 'percentage' ? `${coupon.value}%` : formatCurrency(coupon.value)}
+                      {coupon.type === "percentage" ? `${coupon.value}%` : formatCurrency(coupon.value)}
                     </TableCell>
+                    <TableCell>{coupon.usedCount}{coupon.maxUsesTotal ? ` / ${coupon.maxUsesTotal}` : ""}</TableCell>
                     <TableCell>
-                      {coupon.usedCount} {coupon.maxUsesTotal ? `/ ${coupon.maxUsesTotal}` : ''}
-                    </TableCell>
-                    <TableCell>
-                      {coupon.expiresAt ? format(new Date(coupon.expiresAt), "dd/MM/yyyy") : 'Sem validade'}
+                      {coupon.expiresAt ? format(new Date(coupon.expiresAt), "dd/MM/yyyy") : "—"}
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className={coupon.isActive ? "text-green-500 border-green-500/50" : "text-muted-foreground"}>
-                        {coupon.isActive ? 'Ativo' : 'Inativo'}
+                        {coupon.isActive ? t("subscription.status_active") : t("subscription.status_cancelled")}
                       </Badge>
                     </TableCell>
                   </TableRow>

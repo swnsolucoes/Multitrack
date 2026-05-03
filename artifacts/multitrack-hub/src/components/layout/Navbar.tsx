@@ -2,20 +2,23 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/AuthContext";
 import { useGetCart } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Menu, Search, User, LogOut } from "lucide-react";
+import { ShoppingCart, Search, User, LogOut, Globe } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { useTranslation } from "react-i18next";
 
 export function Navbar() {
-  const [location, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
   const { user, logout, isAdmin } = useAuth();
-  
-  const { data: cart } = useGetCart({
-    query: {
-      enabled: !!user,
-    }
-  });
+  const { t, i18n } = useTranslation();
 
+  const { data: cart } = useGetCart({ query: { enabled: !!user } });
   const cartItemCount = cart?.items?.length || 0;
+
+  const toggleLang = () => {
+    const next = i18n.language === "pt" ? "en" : "pt";
+    i18n.changeLanguage(next);
+    localStorage.setItem("lang", next);
+  };
 
   return (
     <nav className="border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
@@ -26,28 +29,36 @@ export function Navbar() {
               MULTITRACK<span className="text-foreground">HUB</span>
             </div>
           </Link>
-          
           <div className="hidden md:flex items-center gap-4 text-sm font-medium text-muted-foreground">
-            <Link href="/catalog" className="hover:text-foreground transition-colors">Catálogo</Link>
-            <Link href="/plans" className="hover:text-foreground transition-colors">Planos</Link>
-            <Link href="/rateios" className="hover:text-foreground transition-colors">Rateios</Link>
+            <Link href="/catalog" className="hover:text-foreground transition-colors">{t("nav.catalog")}</Link>
+            <Link href="/plans" className="hover:text-foreground transition-colors">{t("nav.plans")}</Link>
+            <Link href="/rateios" className="hover:text-foreground transition-colors">{t("nav.rateios")}</Link>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="hidden md:flex relative w-64">
+        <div className="flex items-center gap-3">
+          <div className="hidden md:flex relative w-60">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <input 
-              type="search" 
-              placeholder="Buscar multitracks..." 
+            <input
+              type="search"
+              placeholder={t("nav.search_placeholder")}
               className="w-full bg-muted/50 border border-border rounded-full h-9 pl-9 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:bg-background transition-all"
               onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  setLocation(`/catalog?q=${e.currentTarget.value}`);
-                }
+                if (e.key === "Enter") setLocation(`/catalog?q=${e.currentTarget.value}`);
               }}
             />
           </div>
+
+          {/* Language toggle */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleLang}
+            className="hidden sm:flex items-center gap-1.5 text-muted-foreground hover:text-foreground px-2 h-8 text-xs font-bold"
+          >
+            <Globe className="h-3.5 w-3.5" />
+            {i18n.language === "pt" ? "EN" : "PT"}
+          </Button>
 
           <Link href="/cart">
             <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground">
@@ -78,44 +89,31 @@ export function Navbar() {
                 {isAdmin && (
                   <>
                     <DropdownMenuItem onClick={() => setLocation("/admin")} className="cursor-pointer font-medium text-primary">
-                      Painel Admin
+                      {t("nav.admin_panel")}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                   </>
                 )}
-                <DropdownMenuItem onClick={() => setLocation("/orders")} className="cursor-pointer">
-                  Minhas Compras
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setLocation("/downloads")} className="cursor-pointer">
-                  Meus Downloads
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setLocation("/subscription")} className="cursor-pointer">
-                  Minha Assinatura
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setLocation("/wishlist")} className="cursor-pointer">
-                  Lista de Desejos
-                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setLocation("/orders")} className="cursor-pointer">{t("nav.my_orders")}</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setLocation("/downloads")} className="cursor-pointer">{t("nav.my_downloads")}</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setLocation("/subscription")} className="cursor-pointer">{t("nav.my_subscription")}</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setLocation("/wishlist")} className="cursor-pointer">{t("nav.wishlist")}</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => logout()} className="cursor-pointer text-destructive focus:text-destructive">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sair
+                  <LogOut className="mr-2 h-4 w-4" /> {t("nav.logout")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
             <div className="flex items-center gap-2">
               <Link href="/login">
-                <Button variant="ghost" className="hidden sm:flex">Entrar</Button>
+                <Button variant="ghost" className="hidden sm:flex">{t("nav.login")}</Button>
               </Link>
               <Link href="/register">
-                <Button>Criar Conta</Button>
+                <Button>{t("nav.register")}</Button>
               </Link>
             </div>
           )}
-
-          <Button variant="ghost" size="icon" className="md:hidden text-muted-foreground">
-            <Menu className="h-5 w-5" />
-          </Button>
         </div>
       </div>
     </nav>

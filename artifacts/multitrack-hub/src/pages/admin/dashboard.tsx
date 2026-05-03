@@ -2,81 +2,79 @@ import { useGetAdminDashboard } from "@workspace/api-client-react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
-import { Loader2, DollarSign, Users, ShoppingCart, Download, TrendingUp } from "lucide-react";
+import { Loader2, DollarSign, Users, ShoppingCart, Download } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { useTranslation } from "react-i18next";
 
 export default function AdminDashboard() {
   const { data: metrics, isLoading } = useGetAdminDashboard();
+  const { t } = useTranslation();
 
-  if (isLoading) {
-    return (
-      <AdminLayout>
-        <div className="flex items-center justify-center h-full min-h-[400px]">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      </AdminLayout>
-    );
-  }
+  if (isLoading) return (
+    <AdminLayout>
+      <div className="flex items-center justify-center h-full min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    </AdminLayout>
+  );
 
-  if (!metrics) return <AdminLayout><div>Erro ao carregar dados.</div></AdminLayout>;
+  if (!metrics) return <AdminLayout><div>{t("common.error")}</div></AdminLayout>;
 
   const revenueData = [
-    { name: 'Compras', value: metrics.revenueByChannel.singlePurchase },
-    { name: 'Assinaturas', value: metrics.revenueByChannel.subscription },
-    { name: 'Bundles', value: metrics.revenueByChannel.bundle },
-    { name: 'Rateios', value: metrics.revenueByChannel.rateio },
+    { name: t("rateios.title").split(" ")[0] + " Purchase", value: metrics.revenueByChannel.singlePurchase },
+    { name: t("subscription.title"), value: metrics.revenueByChannel.subscription },
+    { name: "Bundle", value: metrics.revenueByChannel.bundle },
+    { name: t("rateios.title"), value: metrics.revenueByChannel.rateio },
   ];
 
   return (
     <AdminLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">Visão geral do desempenho da plataforma.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("admin.dashboard")}</h1>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Receita Total</CardTitle>
+              <CardTitle className="text-sm font-medium">{t("admin.revenue")}</CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{formatCurrency(metrics.totalRevenue)}</div>
-              <p className="text-xs text-muted-foreground">MRR: {formatCurrency(metrics.mrr)}</p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pedidos</CardTitle>
-              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{metrics.totalOrders}</div>
-              <p className="text-xs text-muted-foreground">Ticket médio: {formatCurrency(metrics.averageOrderValue)}</p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Usuários</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{metrics.totalUsers}</div>
-              <p className="text-xs text-muted-foreground">{metrics.premiumUsers} assinantes premium</p>
+              <p className="text-xs text-muted-foreground">{t("admin.mrr")}: {formatCurrency(metrics.mrr)}</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Downloads</CardTitle>
+              <CardTitle className="text-sm font-medium">{t("admin.orders")}</CardTitle>
+              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{metrics.totalOrders}</div>
+              <p className="text-xs text-muted-foreground">{t("admin.avg_order")}: {formatCurrency(metrics.averageOrderValue)}</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">{t("admin.users")}</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{metrics.totalUsers}</div>
+              <p className="text-xs text-muted-foreground">{metrics.premiumUsers} {t("admin.premium_users")}</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">{t("admin.downloads")}</CardTitle>
               <Download className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{metrics.totalDownloads}</div>
-              <p className="text-xs text-muted-foreground">Arquivos baixados</p>
             </CardContent>
           </Card>
         </div>
@@ -84,7 +82,7 @@ export default function AdminDashboard() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
           <Card className="col-span-4">
             <CardHeader>
-              <CardTitle>Receita por Canal</CardTitle>
+              <CardTitle>{t("admin.revenue_by_channel")}</CardTitle>
             </CardHeader>
             <CardContent className="pl-2">
               <div className="h-[300px]">
@@ -92,32 +90,22 @@ export default function AdminDashboard() {
                   <BarChart data={revenueData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
                     <XAxis dataKey="name" stroke="#888" fontSize={12} tickLine={false} axisLine={false} />
-                    <YAxis 
-                      stroke="#888" 
-                      fontSize={12} 
-                      tickLine={false} 
-                      axisLine={false} 
-                      tickFormatter={(value) => `R$${value}`}
-                    />
-                    <Tooltip 
-                      cursor={{fill: 'transparent'}}
-                      contentStyle={{ backgroundColor: '#1f1f23', borderColor: '#27272a', borderRadius: '8px' }}
-                      formatter={(value: number) => [formatCurrency(value), 'Receita']}
-                    />
+                    <YAxis stroke="#888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `R$${v}`} />
+                    <Tooltip cursor={{ fill: "transparent" }}
+                      contentStyle={{ backgroundColor: "#1f1f23", borderColor: "#27272a", borderRadius: "8px" }}
+                      formatter={(value: number) => [formatCurrency(value), t("admin.revenue")]} />
                     <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                      {revenueData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill="hsl(180 100% 50%)" />
-                      ))}
+                      {revenueData.map((_, index) => <Cell key={`cell-${index}`} fill="hsl(180 100% 50%)" />)}
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>
-          
+
           <Card className="col-span-3">
             <CardHeader>
-              <CardTitle>Top Produtos</CardTitle>
+              <CardTitle>{t("admin.top_products")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -132,7 +120,7 @@ export default function AdminDashboard() {
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-bold text-primary">{formatCurrency(product.revenue)}</p>
-                      <p className="text-xs text-muted-foreground">{product.sales} vendas</p>
+                      <p className="text-xs text-muted-foreground">{product.sales} sales</p>
                     </div>
                   </div>
                 ))}

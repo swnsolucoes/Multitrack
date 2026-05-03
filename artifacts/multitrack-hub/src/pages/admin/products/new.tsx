@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAdminCreateProduct, getAdminListProductsQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -14,19 +13,20 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Loader2, ArrowLeft } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const productSchema = z.object({
-  name: z.string().min(1, "Nome é obrigatório"),
-  artist: z.string().min(1, "Artista é obrigatório"),
-  genre: z.string().min(1, "Gênero é obrigatório"),
-  description: z.string().min(1, "Descrição é obrigatória"),
-  price: z.coerce.number().min(0, "Preço deve ser maior ou igual a zero"),
+  name: z.string().min(1),
+  artist: z.string().min(1),
+  genre: z.string().min(1),
+  description: z.string().min(1),
+  price: z.coerce.number().min(0),
   promoPrice: z.coerce.number().optional().nullable(),
   bpm: z.coerce.number().optional().nullable(),
   tonality: z.string().optional(),
   duration: z.string().optional(),
-  coverUrl: z.string().url("URL inválida").optional().or(z.literal("")),
-  previewAudioUrl: z.string().url("URL inválida").optional().or(z.literal("")),
+  coverUrl: z.string().url().optional().or(z.literal("")),
+  previewAudioUrl: z.string().url().optional().or(z.literal("")),
   quality: z.enum(["premium", "standard", "backing_track", "demo"]),
   status: z.enum(["active", "inactive", "draft", "featured"]),
   isFeatured: z.boolean().default(false),
@@ -38,46 +38,30 @@ const productSchema = z.object({
 export default function AdminProductNew() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const createProduct = useAdminCreateProduct();
 
   const form = useForm<z.infer<typeof productSchema>>({
     resolver: zodResolver(productSchema),
     defaultValues: {
-      name: "",
-      artist: "",
-      genre: "",
-      description: "",
-      price: 0,
-      promoPrice: null,
-      bpm: null,
-      tonality: "",
-      duration: "",
-      coverUrl: "",
-      previewAudioUrl: "",
-      quality: "premium",
-      status: "draft",
-      isFeatured: false,
-      availableForSale: true,
-      availableForSubscription: true,
-      creditsRequired: 1,
+      name: "", artist: "", genre: "", description: "",
+      price: 0, promoPrice: null, bpm: null, tonality: "", duration: "",
+      coverUrl: "", previewAudioUrl: "",
+      quality: "premium", status: "draft",
+      isFeatured: false, availableForSale: true, availableForSubscription: true, creditsRequired: 1,
     },
   });
 
   const onSubmit = (values: z.infer<typeof productSchema>) => {
-    createProduct.mutate(
-      { data: values as any },
-      {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getAdminListProductsQueryKey() });
-          toast({ title: "Produto criado com sucesso" });
-          setLocation("/admin/products");
-        },
-        onError: () => {
-          toast({ variant: "destructive", title: "Erro ao criar produto" });
-        },
-      }
-    );
+    createProduct.mutate({ data: values as any }, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getAdminListProductsQueryKey() });
+        toast({ title: t("common.save") });
+        setLocation("/admin/products");
+      },
+      onError: () => { toast({ variant: "destructive", title: t("common.error") }); },
+    });
   };
 
   return (
@@ -85,13 +69,10 @@ export default function AdminProductNew() {
       <div className="max-w-3xl mx-auto space-y-6">
         <div className="flex items-center gap-4">
           <Link href="/admin/products">
-            <Button variant="outline" size="icon">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
+            <Button variant="outline" size="icon"><ArrowLeft className="h-4 w-4" /></Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Novo Produto</h1>
-            <p className="text-muted-foreground">Adicione uma nova multitrack ao catálogo.</p>
+            <h1 className="text-3xl font-bold tracking-tight">{t("common.create")} — {t("admin.products")}</h1>
           </div>
         </div>
 
@@ -100,76 +81,44 @@ export default function AdminProductNew() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="grid md:grid-cols-2 gap-6">
                 <FormField control={form.control} name="name" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome da Música</FormLabel>
-                    <FormControl><Input {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
+                  <FormItem><FormLabel>Song Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="artist" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Artista</FormLabel>
-                    <FormControl><Input {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
+                  <FormItem><FormLabel>Artist</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
               </div>
 
               <div className="grid md:grid-cols-3 gap-6">
                 <FormField control={form.control} name="genre" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Gênero</FormLabel>
-                    <FormControl><Input {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
+                  <FormItem><FormLabel>Genre</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="bpm" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>BPM</FormLabel>
-                    <FormControl><Input type="number" {...field} value={field.value || ''} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
+                  <FormItem><FormLabel>BPM</FormLabel><FormControl><Input type="number" {...field} value={field.value || ""} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="tonality" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tom</FormLabel>
-                    <FormControl><Input {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
+                  <FormItem><FormLabel>{t("product.key")}</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
               </div>
 
               <FormField control={form.control} name="description" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descrição</FormLabel>
-                  <FormControl><Textarea className="min-h-[100px]" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
+                <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea className="min-h-[100px]" {...field} /></FormControl><FormMessage /></FormItem>
               )} />
 
               <div className="grid md:grid-cols-2 gap-6">
                 <FormField control={form.control} name="price" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Preço (R$)</FormLabel>
-                    <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
+                  <FormItem><FormLabel>Price (R$)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="promoPrice" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Preço Promocional (R$)</FormLabel>
-                    <FormControl><Input type="number" step="0.01" {...field} value={field.value || ''} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
+                  <FormItem><FormLabel>Promo Price (R$)</FormLabel><FormControl><Input type="number" step="0.01" {...field} value={field.value || ""} /></FormControl><FormMessage /></FormItem>
                 )} />
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
                 <FormField control={form.control} name="quality" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Qualidade</FormLabel>
+                    <FormLabel>Quality</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl>
+                      <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                       <SelectContent>
                         <SelectItem value="premium">Premium</SelectItem>
                         <SelectItem value="standard">Standard</SelectItem>
@@ -184,12 +133,12 @@ export default function AdminProductNew() {
                   <FormItem>
                     <FormLabel>Status</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl>
+                      <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                       <SelectContent>
-                        <SelectItem value="draft">Rascunho</SelectItem>
-                        <SelectItem value="active">Ativo</SelectItem>
-                        <SelectItem value="inactive">Inativo</SelectItem>
-                        <SelectItem value="featured">Destaque</SelectItem>
+                        <SelectItem value="draft">Draft</SelectItem>
+                        <SelectItem value="active">{t("subscription.status_active")}</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                        <SelectItem value="featured">Featured</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -199,48 +148,37 @@ export default function AdminProductNew() {
 
               <div className="grid md:grid-cols-2 gap-6">
                 <FormField control={form.control} name="coverUrl" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>URL da Capa</FormLabel>
-                    <FormControl><Input {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
+                  <FormItem><FormLabel>Cover URL</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="previewAudioUrl" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>URL do Áudio Preview</FormLabel>
-                    <FormControl><Input {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
+                  <FormItem><FormLabel>Preview Audio URL</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
               </div>
 
               <div className="bg-secondary/30 p-4 rounded-xl space-y-4">
-                <h3 className="font-bold mb-2">Configurações Adicionais</h3>
-                
+                <h3 className="font-bold mb-2">Settings</h3>
                 <FormField control={form.control} name="isFeatured" render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border border-border p-3 shadow-sm">
                     <div className="space-y-0.5">
-                      <FormLabel>Destaque</FormLabel>
-                      <p className="text-[10px] text-muted-foreground">Exibir na seção de destaques da home</p>
+                      <FormLabel>Featured</FormLabel>
+                      <p className="text-[10px] text-muted-foreground">Show in homepage featured section</p>
                     </div>
                     <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                   </FormItem>
                 )} />
-
                 <FormField control={form.control} name="availableForSubscription" render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border border-border p-3 shadow-sm">
                     <div className="space-y-0.5">
-                      <FormLabel>Disponível na Assinatura</FormLabel>
-                      <p className="text-[10px] text-muted-foreground">Pode ser baixado com créditos</p>
+                      <FormLabel>Available via Subscription</FormLabel>
+                      <p className="text-[10px] text-muted-foreground">Can be downloaded with credits</p>
                     </div>
                     <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                   </FormItem>
                 )} />
-                
                 {form.watch("availableForSubscription") && (
                   <FormField control={form.control} name="creditsRequired" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Créditos Necessários</FormLabel>
+                      <FormLabel>Credits Required</FormLabel>
                       <FormControl><Input type="number" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
@@ -251,7 +189,7 @@ export default function AdminProductNew() {
               <div className="flex justify-end pt-4">
                 <Button type="submit" disabled={createProduct.isPending}>
                   {createProduct.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Salvar Produto
+                  {t("common.save")}
                 </Button>
               </div>
             </form>
