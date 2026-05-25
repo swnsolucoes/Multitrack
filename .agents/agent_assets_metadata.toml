@@ -6,3 +6,9 @@ id = "k6RJoEtt-Gpm6fes_fv9Z"
 uri = "file://DOCUMENTACAO.md"
 type = "text"
 title = "MultiTrack Hub — Documentação Completa"
+
+[[outputs]]
+id = "yAr2r8DUL2S77V0grfYaY"
+uri = "file://RELATORIO_TECNICO.md"
+type = "text"
+title = "Relatório Técnico de Conformidade — MultiTrack Hub"
