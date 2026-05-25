@@ -608,6 +608,18 @@ Inclui o usuário admin.
 | `SESSION_SECRET` | Segredo para hash de senhas | Sim |
 | `PORT` | Porta de cada serviço (injetada automaticamente) | Automático |
 
+## 11.1. Versão do Node.js
+
+O projeto padroniza **Node.js 24 LTS** como runtime de produção e desenvolvimento.
+
+| Arquivo | Conteúdo | Finalidade |
+|---|---|---|
+| `.nvmrc` | `24` | nvm / fnm — troca automática de versão ao entrar no diretório |
+| `.node-version` | `24` | Ferramentas alternativas (nodenv, Volta, etc.) |
+| `package.json` (`engines`) | `"node": ">=24 <25"` | Aviso em `npm install` se versão incompatível |
+
+> **Atenção:** Node.js 18 e Node.js 20 estão EOL ou encerrando suporte ativo e **não devem ser usados** neste projeto em produção.
+
 ---
 
 ## 12. Estrutura de Arquivos

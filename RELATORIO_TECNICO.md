@@ -333,32 +333,31 @@ Nenhum dos seguintes e-mails está implementado:
 
 ### 12. Versão do Node.js
 
-**Status: PROBLEMA** `P2`
+**Status: RESOLVIDO** `P2`
 
-**Evidência:**
+**Evidência inicial:**
 
 ```
 $ node --version
 v24.13.0
 ```
 
-Node.js 24 é a linha **"Current"** (experimental/cutting-edge), **não é LTS**. As versões LTS ativas são:
+Node.js 24 **é LTS oficial** (linha ativa de suporte de longo prazo). O problema identificado originalmente não era a versão em si, mas a **ausência de pinagem explícita** da versão no repositório — sem `.nvmrc`, `.node-version` ou campo `engines` no `package.json`, qualquer desenvolvedor ou ambiente de CI poderia instalar uma versão diferente sem aviso.
 
-| Versão | Codinome | Status | Fim do Suporte |
-|---|---|---|---|
-| Node 22 | Jod | **LTS Ativo** | abril/2027 |
-| Node 20 | Iron | **LTS Ativo** | abril/2026 |
-| Node 18 | Hydrogen | Maintenance | abril/2025 |
-| **Node 24** | — | **Current** | Não LTS |
+> **Nota:** Node.js 18 e Node.js 20 estão EOL ou encerrando suporte e **não devem ser usados** neste projeto em produção.
 
-Usar versão não-LTS em produção significa:
-- Sem garantia de patches de segurança de longo prazo.
-- Possível incompatibilidade com pacotes npm otimizados para LTS.
-- Não recomendado pela própria Node.js Foundation para ambientes de produção.
+**Correção aplicada:**
 
-**Arquivos envolvidos:**
-- `.nvmrc` / `.node-version` — ausentes (sem pinagem de versão)
-- `package.json` — sem campo `engines`
+| Arquivo | Conteúdo |
+|---|---|
+| `.nvmrc` | `24` |
+| `.node-version` | `24` |
+| `package.json` (`engines`) | `"node": ">=24 <25"`, `"npm": ">=11"` |
+
+**Arquivos alterados:**
+- `.nvmrc` — criado
+- `.node-version` — criado
+- `package.json` — campo `engines` adicionado
 
 ---
 
@@ -452,11 +451,9 @@ Usar versão não-LTS em produção significa:
 
 ### P2 — Melhorias técnicas (planejar para próximo ciclo)
 
-#### Etapa 12 — Versão LTS do Node.js (P2)
-1. Criar `.nvmrc` com `22` (Node 22 LTS "Jod").
-2. Adicionar campo `"engines": { "node": ">=22.0.0" }` no `package.json` raiz.
-3. Testar compatibilidade de todos os pacotes com Node 22.
-4. Atualizar o ambiente de execução do Replit para usar Node 22.
+#### Etapa 12 — Pinagem da versão do Node.js (P2) ✅ Concluída
+
+Node.js 24 LTS já estava em uso. Foram criados `.nvmrc`, `.node-version` e o campo `engines` no `package.json` raiz para fixar `>=24 <25`. Node 18 e Node 20 estão EOL e não devem ser usados neste projeto.
 
 #### Etapa 13 — Licenciamento por produto (P2)
 1. Criar tabela `license_types` com tipos estruturados (pessoal, comercial, ministério).
