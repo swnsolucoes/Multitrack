@@ -12,3 +12,9 @@ id = "yAr2r8DUL2S77V0grfYaY"
 uri = "file://RELATORIO_TECNICO.md"
 type = "text"
 title = "Relatório Técnico de Conformidade — MultiTrack Hub"
+
+[[outputs]]
+id = "ET0-3YQilmeeU9lemnMAP"
+uri = "file://HISTORICO_COMPLETO.md"
+type = "text"
+title = "Histórico Completo do Projeto — MultiTrack Hub"
