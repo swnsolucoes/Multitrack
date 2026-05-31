@@ -24,3 +24,9 @@ id = "tEaQ3jWBtormuai1BbBXG"
 uri = "file://RELATORIO_COOLIFY_MULTITRACK.md"
 type = "text"
 title = "Relatório de Auditoria — Coolify Deploy (MultiTrack Hub)"
+
+[[outputs]]
+id = "YBlY6E-jKiX0c9MirdKiF"
+uri = "file://RELATORIO_VALIDACAO_DOCKER_COOLIFY.md"
+type = "text"
+title = "Relatório de Validação — Docker + Coolify"
