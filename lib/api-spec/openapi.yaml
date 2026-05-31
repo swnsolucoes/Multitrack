@@ -49,6 +49,19 @@ paths:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
 
+  /health:
+    get:
+      operationId: healthCheckAlias
+      tags: [health]
+      summary: Health check (alias)
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
   # ── Auth ──────────────────────────────────────────────────────────────────
   /auth/register:
     post:
@@ -1108,9 +1121,13 @@ components:
     HealthStatus:
       type: object
       properties:
-        status:
+        ok:
+          type: boolean
+        database:
           type: string
-      required: [status]
+        env:
+          type: string
+      required: [ok, database, env]
 
     MessageResponse:
       type: object

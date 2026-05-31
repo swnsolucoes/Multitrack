@@ -17,7 +17,7 @@ router.get("/wishlist", requireAuth, async (req, res) => {
 // POST /wishlist/:productId
 router.post("/wishlist/:productId", requireAuth, async (req, res) => {
   const userId = (req as any).user.id;
-  const productId = parseInt(req.params.productId);
+  const productId = parseInt(req.params.productId as string);
 
   const existing = await db.select().from(wishlistTable).where(and(eq(wishlistTable.userId, userId), eq(wishlistTable.productId, productId)));
   if (!existing.length) {
@@ -32,7 +32,7 @@ router.post("/wishlist/:productId", requireAuth, async (req, res) => {
 // DELETE /wishlist/:productId
 router.delete("/wishlist/:productId", requireAuth, async (req, res) => {
   const userId = (req as any).user.id;
-  await db.delete(wishlistTable).where(and(eq(wishlistTable.userId, userId), eq(wishlistTable.productId, parseInt(req.params.productId))));
+  await db.delete(wishlistTable).where(and(eq(wishlistTable.userId, userId), eq(wishlistTable.productId, parseInt(req.params.productId as string))));
   res.json({ message: "Removed from wishlist" });
 });
 

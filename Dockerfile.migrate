@@ -5,13 +5,13 @@
 # Uso:
 #   docker compose --profile migrate run --rm migrate
 # ─────────────────────────────────────────────
-FROM node:24-alpine AS migrator
+FROM node:24-slim AS migrator
 
 WORKDIR /workspace
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN npm install -g pnpm@10.26.1 --no-update-notifier
 
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY .npmrc package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY lib/ ./lib/
 
 RUN pnpm install --frozen-lockfile

@@ -45,7 +45,7 @@ export default function AdminProductEdit() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
-  const { data: product, isLoading } = useGetProduct(productId, { query: { enabled: !!productId } });
+  const { data: product, isLoading } = useGetProduct(productId, { query: { enabled: !!productId, queryKey: getGetProductQueryKey(productId) } });
   const updateProduct = useAdminUpdateProduct();
 
   const form = useForm<z.infer<typeof productSchema>>({
@@ -85,7 +85,7 @@ export default function AdminProductEdit() {
   }, [product]);
 
   const onSubmit = (values: z.infer<typeof productSchema>) => {
-    updateProduct.mutate({ productId, data: values as any }, {
+    updateProduct.mutate({ id: productId, data: values as any }, {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getAdminListProductsQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetProductQueryKey(productId) });

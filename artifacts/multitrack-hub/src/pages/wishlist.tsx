@@ -16,11 +16,11 @@ export default function Wishlist() {
   const { toast } = useToast();
   const { t } = useTranslation();
 
-  const { data: wishlist, isLoading } = useGetWishlist({ query: { enabled: !!user } });
+  const { data: wishlist, isLoading } = useGetWishlist({ query: { enabled: !!user, queryKey: getGetWishlistQueryKey() } });
   const removeFromWishlist = useRemoveFromWishlist();
 
   const handleRemove = (productId: number) => {
-    removeFromWishlist.mutate({ data: { productId } }, {
+    removeFromWishlist.mutate({ productId }, {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getGetWishlistQueryKey() });
         toast({ title: t("product.remove_wishlist") });

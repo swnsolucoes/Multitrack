@@ -24,7 +24,7 @@ export default function AdminUserDetail() {
   const { t, i18n } = useTranslation();
   const locale = i18n.language === "pt" ? ptBR : enUS;
 
-  const { data: user, isLoading } = useAdminGetUser(userId, { query: { enabled: !!userId } });
+  const { data: user, isLoading } = useAdminGetUser(userId, { query: { enabled: !!userId, queryKey: getAdminGetUserQueryKey(userId) } });
   const updateUser = useAdminUpdateUser();
 
   const [role, setRole] = useState<string>("buyer");
@@ -36,7 +36,7 @@ export default function AdminUserDetail() {
   }, [user]);
 
   const handleSave = () => {
-    updateUser.mutate({ userId, data: { role: role as any, isBlocked, notes } }, {
+    updateUser.mutate({ id: userId, data: { role: role as any, isBlocked, notes } }, {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getAdminGetUserQueryKey(userId) });
         toast({ title: t("common.save") });

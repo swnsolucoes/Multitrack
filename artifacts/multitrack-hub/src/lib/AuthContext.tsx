@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { useGetMe, User } from "@workspace/api-client-react";
+import { useGetMe, User, getGetMeQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface AuthContextType {
@@ -20,6 +20,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     query: {
       enabled: !!token,
       retry: false,
+      queryKey: getGetMeQueryKey(),
     },
   });
 

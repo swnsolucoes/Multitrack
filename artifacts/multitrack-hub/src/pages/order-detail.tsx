@@ -18,11 +18,11 @@ export default function OrderDetail() {
   const { t, i18n } = useTranslation();
   const locale = i18n.language === "pt" ? ptBR : enUS;
 
-  const { data: order, isLoading } = useGetOrder(orderId, { query: { enabled: !!orderId } });
+  const { data: order, isLoading } = useGetOrder(orderId, { query: { enabled: !!orderId, queryKey: getGetOrderQueryKey(orderId) } });
   const payOrder = usePayOrder();
 
   const handlePay = () => {
-    payOrder.mutate({ data: { paymentMethod: "pix" } }, {
+    payOrder.mutate({ id: orderId, data: { paymentMethod: "pix" } }, {
       onSuccess: () => { queryClient.invalidateQueries({ queryKey: getGetOrderQueryKey(orderId) }); },
     });
   };

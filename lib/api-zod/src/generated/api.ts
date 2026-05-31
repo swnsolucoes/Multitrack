@@ -11,7 +11,18 @@ import * as zod from "zod";
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({
-  status: zod.string(),
+  ok: zod.boolean(),
+  database: zod.string(),
+  env: zod.string(),
+});
+
+/**
+ * @summary Health check (alias)
+ */
+export const HealthCheckAliasResponse = zod.object({
+  ok: zod.boolean(),
+  database: zod.string(),
+  env: zod.string(),
 });
 
 /**

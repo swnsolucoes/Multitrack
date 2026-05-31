@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/AuthContext";
-import { useGetCart } from "@workspace/api-client-react";
+import { useGetCart, getGetCartQueryKey } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, Search, User, LogOut, Globe } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
@@ -11,7 +11,7 @@ export function Navbar() {
   const { user, logout, isAdmin } = useAuth();
   const { t, i18n } = useTranslation();
 
-  const { data: cart } = useGetCart({ query: { enabled: !!user } });
+  const { data: cart } = useGetCart({ query: { enabled: !!user, queryKey: getGetCartQueryKey() } });
   const cartItemCount = cart?.items?.length || 0;
 
   const toggleLang = () => {

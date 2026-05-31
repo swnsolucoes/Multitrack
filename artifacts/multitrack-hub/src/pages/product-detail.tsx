@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useParams, Link } from "wouter";
-import { useGetProduct, useGetRelatedProducts, useAddToCart, useAddToWishlist, getGetCartQueryKey, getGetWishlistQueryKey } from "@workspace/api-client-react";
+import { useGetProduct, useGetRelatedProducts, useAddToCart, useAddToWishlist, getGetCartQueryKey, getGetWishlistQueryKey, getGetProductQueryKey, getGetRelatedProductsQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -32,8 +32,8 @@ export default function ProductDetail() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
-  const { data: product, isLoading } = useGetProduct(id, { query: { enabled: !!id } });
-  const { data: relatedProducts } = useGetRelatedProducts(id, { query: { enabled: !!id } });
+  const { data: product, isLoading } = useGetProduct(id, { query: { enabled: !!id, queryKey: getGetProductQueryKey(id) } });
+  const { data: relatedProducts } = useGetRelatedProducts(id, { query: { enabled: !!id, queryKey: getGetRelatedProductsQueryKey(id) } });
   const addToCartMutation = useAddToCart();
   const addToWishlistMutation = useAddToWishlist();
 
@@ -57,7 +57,7 @@ export default function ProductDetail() {
   };
 
   const handleAddToWishlist = () => {
-    addToWishlistMutation.mutate({ data: { productId: id } }, {
+    addToWishlistMutation.mutate({ productId: id }, {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getGetWishlistQueryKey() });
         toast({ title: t("product.add_wishlist"), description: product?.name });

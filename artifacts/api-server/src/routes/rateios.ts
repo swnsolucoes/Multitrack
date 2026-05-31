@@ -62,7 +62,7 @@ router.post("/rateios", requireAuth, async (req, res) => {
 // GET /rateios/:id
 router.get("/rateios/:id", optionalAuth, async (req, res) => {
   const user = (req as any).user;
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id as string);
   const [r] = await db.select().from(rateiosTable).where(eq(rateiosTable.id, id)).limit(1);
   if (!r) { res.status(404).json({ error: "Rateio not found" }); return; }
 
@@ -99,7 +99,7 @@ router.get("/rateios/:id", optionalAuth, async (req, res) => {
 // POST /rateios/:id/join
 router.post("/rateios/:id/join", requireAuth, async (req, res) => {
   const userId = (req as any).user.id;
-  const rateioId = parseInt(req.params.id);
+  const rateioId = parseInt(req.params.id as string);
 
   const [r] = await db.select().from(rateiosTable).where(eq(rateiosTable.id, rateioId)).limit(1);
   if (!r || r.status !== "open") { res.status(400).json({ error: "Rateio não está aberto para participação" }); return; }
@@ -114,7 +114,7 @@ router.post("/rateios/:id/join", requireAuth, async (req, res) => {
 
 // GET /rateios/:id/comments
 router.get("/rateios/:id/comments", async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id as string);
   const comments = await db.select().from(rateioCommentsTable)
     .leftJoin(usersTable, eq(rateioCommentsTable.userId, usersTable.id))
     .where(eq(rateioCommentsTable.rateioId, id)).orderBy(rateioCommentsTable.createdAt);
@@ -124,7 +124,7 @@ router.get("/rateios/:id/comments", async (req, res) => {
 // POST /rateios/:id/comments
 router.post("/rateios/:id/comments", requireAuth, async (req, res) => {
   const userId = (req as any).user.id;
-  const rateioId = parseInt(req.params.id);
+  const rateioId = parseInt(req.params.id as string);
   const { content } = req.body;
   if (!content) { res.status(400).json({ error: "content required" }); return; }
 

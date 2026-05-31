@@ -73,7 +73,7 @@ router.get("/products/bestsellers", async (req, res) => {
 
 // GET /products/:id
 router.get("/products/:id", optionalAuth, async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id as string);
   const [product] = await db.select().from(productsTable).where(eq(productsTable.id, id)).limit(1);
   if (!product) {
     res.status(404).json({ error: "Product not found" });
@@ -91,7 +91,7 @@ router.get("/products/:id", optionalAuth, async (req, res) => {
 
 // GET /products/:id/related
 router.get("/products/:id/related", async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id as string);
   const [product] = await db.select().from(productsTable).where(eq(productsTable.id, id)).limit(1);
   if (!product) { res.json([]); return; }
 

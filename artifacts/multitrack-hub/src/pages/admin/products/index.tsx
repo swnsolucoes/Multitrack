@@ -24,7 +24,7 @@ export default function AdminProducts() {
 
   const handleDelete = (id: number) => {
     if (confirm(t("common.confirm"))) {
-      deleteProduct.mutate({ productId: id }, {
+      deleteProduct.mutate({ id }, {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getAdminListProductsQueryKey() });
           toast({ title: t("common.delete") });

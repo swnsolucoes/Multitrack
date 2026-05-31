@@ -1,4 +1,4 @@
-import { useGetMySubscription, useCancelSubscription, useGetCreditBalance, getGetMySubscriptionQueryKey } from "@workspace/api-client-react";
+import { useGetMySubscription, useCancelSubscription, useGetCreditBalance, getGetMySubscriptionQueryKey, getGetCreditBalanceQueryKey } from "@workspace/api-client-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -19,13 +19,13 @@ export default function Subscription() {
   const { t, i18n } = useTranslation();
   const locale = i18n.language === "pt" ? ptBR : enUS;
 
-  const { data: subscription, isLoading: loadingSub } = useGetMySubscription({ query: { enabled: !!user } });
-  const { data: creditBalance, isLoading: loadingCredits } = useGetCreditBalance({ query: { enabled: !!user } });
+  const { data: subscription, isLoading: loadingSub } = useGetMySubscription({ query: { enabled: !!user, queryKey: getGetMySubscriptionQueryKey() } });
+  const { data: creditBalance, isLoading: loadingCredits } = useGetCreditBalance({ query: { enabled: !!user, queryKey: getGetCreditBalanceQueryKey() } });
   const cancelSubscription = useCancelSubscription();
 
   const handleCancel = () => {
     if (confirm(t("subscription.cancel_confirm"))) {
-      cancelSubscription.mutate({}, {
+      cancelSubscription.mutate(undefined, {
         onSuccess: () => { queryClient.invalidateQueries({ queryKey: getGetMySubscriptionQueryKey() }); toast({ title: t("subscription.cancel_btn") }); },
         onError: () => { toast({ variant: "destructive", title: t("common.error") }); },
       });

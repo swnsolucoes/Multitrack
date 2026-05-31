@@ -1,0 +1,3 @@
+- [Docker pnpm preinstall guard](docker-pnpm-preinstall.md) — corepack+pnpm inside Docker fails the root preinstall user-agent check; use `npm install -g pnpm@<pinned>` instead
+- [Docker rollup musl vs glibc](docker-rollup-musl.md) — Alpine (musl) Dockerfile fails if rollup-linux-x64-musl is excluded; use node:24-slim (glibc) for builders; also remove arm64-gnu exclusion for ARM64 prod builds
+- [Orval v8 React Query v5 queryKey required](orval-rq-querykey.md) — UseQueryOptions inline requires queryKey; mutations have exact arg shapes from generated code; void mutations take undefined not {}

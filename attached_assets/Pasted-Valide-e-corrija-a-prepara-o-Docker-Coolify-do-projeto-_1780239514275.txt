@@ -1,0 +1,140 @@
+Valide e corrija a preparação Docker/Coolify do projeto MultiTrack Hub.
+
+Contexto:
+A primeira etapa criou os arquivos de deploy para Coolify:
+
+* Dockerfile.migrate
+* artifacts/api-server/Dockerfile
+* artifacts/multitrack-hub/Dockerfile
+* artifacts/multitrack-hub/nginx.conf
+* docker-compose.yml
+* .env.example
+* docs/deploy/coolify.md
+* RELATORIO_COOLIFY_MULTITRACK.md
+
+Agora quero validar se essa estrutura realmente funciona antes de subir para minha VPS com Coolify.
+
+Objetivo:
+Testar e corrigir somente o necessário para que o projeto rode em staging via Docker Compose/Coolify.
+
+Ambiente alvo:
+
+* VPS com Ubuntu
+* Docker
+* Coolify
+* arquitetura ARM64
+* domínio temporário sugerido: multitrack.macarsalao.com.br
+* painel Coolify já usa painel.macarsalao.com.br, então não usar esse domínio para o app
+
+Tarefas obrigatórias:
+
+1. Validar docker-compose.yml:
+
+   * rodar validação de sintaxe;
+   * confirmar que apenas o serviço web/frontend fica exposto;
+   * confirmar que PostgreSQL não fica exposto publicamente;
+   * confirmar rede interna entre web, api e postgres;
+   * confirmar volumes persistentes do postgres;
+   * confirmar variáveis obrigatórias.
+
+2. Validar Dockerfile do backend:
+
+   * confirmar build em Node 24;
+   * confirmar pnpm/corepack;
+   * confirmar que o build gera dist/index.mjs;
+   * confirmar que o start usa o arquivo correto;
+   * confirmar PORT correto;
+   * confirmar healthcheck da API;
+   * corrigir apenas se algo quebrar.
+
+3. Validar Dockerfile do frontend:
+
+   * confirmar build Vite;
+   * confirmar saída correta em dist/public;
+   * confirmar Nginx servindo a aplicação;
+   * confirmar fallback SPA para index.html;
+   * confirmar proxy /api para o serviço api;
+   * confirmar headers necessários;
+   * corrigir apenas se algo quebrar.
+
+4. Validar variáveis:
+
+   * revisar .env.example;
+   * garantir que DATABASE_URL esteja correta para o container postgres;
+   * garantir POSTGRES_USER, POSTGRES_PASSWORD e POSTGRES_DB;
+   * garantir SESSION_SECRET;
+   * garantir APP_URL;
+   * garantir CORS_ORIGIN;
+   * garantir NODE_ENV=production;
+   * garantir BASE_PATH=/;
+   * não usar secrets reais.
+
+5. Corrigir CORS para staging:
+
+   * atualmente app.use(cors()) aceita qualquer origem;
+   * ajustar o backend para ler CORS_ORIGIN do ambiente;
+   * permitir apenas a origem definida;
+   * manter comportamento permissivo somente em NODE_ENV=development;
+   * garantir que o frontend no mesmo domínio funcione com /api.
+
+6. Melhorar /api/health:
+
+   * confirmar que existe endpoint /api/health;
+   * fazer o healthcheck verificar também conexão com o banco;
+   * retornar status simples, sem vazar secrets:
+     {
+     "ok": true,
+     "database": "ok",
+     "env": "production"
+     }
+
+7. Testar comandos:
+
+   * pnpm install
+   * pnpm run typecheck
+   * pnpm run build
+   * docker compose config
+   * docker compose build
+   * docker compose up em modo teste, se possível no ambiente
+   * testar GET /api/health
+   * testar carregamento do frontend
+   * testar proxy /api pelo Nginx
+
+8. Atualizar docs/deploy/coolify.md:
+
+   * incluir passo exato para criar o app no Coolify;
+   * incluir quais variáveis cadastrar;
+   * incluir domínio recomendado;
+   * incluir como rodar o container migrate;
+   * incluir como verificar logs;
+   * incluir checklist pós-deploy.
+
+Restrições:
+
+* Não implementar pagamento real agora.
+* Não implementar storage real agora.
+* Não corrigir senha agora.
+* Não trocar localStorage por cookie agora.
+* Não alterar layout.
+* Não alterar regra de negócio.
+* Não fazer deploy real.
+* Não fazer commit.
+* Não usar secrets reais.
+* Não rodar migração destrutiva.
+* Não declarar pronto para venda real.
+
+Ao final, entregue um relatório chamado RELATORIO_VALIDACAO_DOCKER_COOLIFY.md contendo:
+
+1. arquivos alterados;
+2. comandos executados;
+3. resultado do build;
+4. resultado do typecheck;
+5. resultado do docker compose config;
+6. resultado do docker compose build;
+7. resultado do teste /api/health;
+8. pendências encontradas;
+9. instruções finais para subir no Coolify;
+10. próximo prompt recomendado.
+
+Importante:
+O objetivo desta tarefa é deixar o projeto pronto para subir como STAGING na VPS, não como produção comercial.

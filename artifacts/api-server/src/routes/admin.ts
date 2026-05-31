@@ -101,7 +101,7 @@ router.post("/admin/products", requireAdmin, async (req, res) => {
 
 // PUT /admin/products/:id
 router.put("/admin/products/:id", requireAdmin, async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id as string);
   const body = req.body;
   const [product] = await db.update(productsTable).set({
     name: body.name, artist: body.artist, genre: body.genre, categoryId: body.categoryId || null,
@@ -120,7 +120,7 @@ router.put("/admin/products/:id", requireAdmin, async (req, res) => {
 
 // DELETE /admin/products/:id
 router.delete("/admin/products/:id", requireAdmin, async (req, res) => {
-  await db.update(productsTable).set({ status: "inactive" }).where(eq(productsTable.id, parseInt(req.params.id)));
+  await db.update(productsTable).set({ status: "inactive" }).where(eq(productsTable.id, parseInt(req.params.id as string)));
   res.json({ message: "Product deactivated" });
 });
 
@@ -155,7 +155,7 @@ router.get("/admin/users", requireAdmin, async (req, res) => {
 
 // GET /admin/users/:id
 router.get("/admin/users/:id", requireAdmin, async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id as string);
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, id)).limit(1);
   if (!user) { res.status(404).json({ error: "User not found" }); return; }
 
@@ -171,7 +171,7 @@ router.get("/admin/users/:id", requireAdmin, async (req, res) => {
 
 // PATCH /admin/users/:id
 router.patch("/admin/users/:id", requireAdmin, async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id as string);
   const { role, isBlocked, notes } = req.body;
   const updateData: any = {};
   if (role !== undefined) updateData.role = role;
@@ -196,7 +196,7 @@ router.get("/admin/rateios", requireAdmin, async (req, res) => {
 
 // PATCH /admin/rateios/:id/status
 router.patch("/admin/rateios/:id/status", requireAdmin, async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id as string);
   const { status, targetAmount, amountPerParticipant, minParticipants, minPercentage, deadline, cancelReason } = req.body;
 
   const updateData: any = { status, updatedAt: new Date() };
@@ -234,7 +234,7 @@ router.post("/admin/coupons", requireAdmin, async (req, res) => {
 
 // PATCH /admin/coupons/:id
 router.patch("/admin/coupons/:id", requireAdmin, async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id as string);
   const { code, type, value, minOrderValue, maxUsesTotal, maxUsesPerUser, isActive, startsAt, expiresAt } = req.body;
   const [coupon] = await db.update(couponsTable).set({
     code: code?.toUpperCase(), type, value: value ? String(value) : undefined,
@@ -254,7 +254,7 @@ router.post("/admin/credits/adjust", requireAdmin, async (req, res) => {
 
 // POST /admin/downloads/:grantId/reissue
 router.post("/admin/downloads/:grantId/reissue", requireAdmin, async (req, res) => {
-  const grantId = parseInt(req.params.grantId);
+  const grantId = parseInt(req.params.grantId as string);
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
   res.json({ url: `/api/downloads/file/admin-${grantId}-${Date.now()}`, expiresAt });
 });

@@ -17,7 +17,7 @@ export default function AdminRateios() {
   const { t } = useTranslation();
 
   const handleStatusChange = (id: number, newStatus: string) => {
-    updateStatus.mutate({ rateioId: id, data: { status: newStatus as any } }, {
+    updateStatus.mutate({ id, data: { status: newStatus as any } }, {
       onSuccess: () => { queryClient.invalidateQueries({ queryKey: getAdminListRateiosQueryKey() }); toast({ title: "OK" }); },
       onError: () => { toast({ variant: "destructive", title: t("common.error") }); },
     });

@@ -27,13 +27,13 @@ export default function RateioDetail() {
 
   const [commentContent, setCommentContent] = useState("");
 
-  const { data: rateio, isLoading: loadingRateio } = useGetRateio(rateioId, { query: { enabled: !!rateioId } });
-  const { data: comments, isLoading: loadingComments } = useGetRateioComments(rateioId, { query: { enabled: !!rateioId } });
+  const { data: rateio, isLoading: loadingRateio } = useGetRateio(rateioId, { query: { enabled: !!rateioId, queryKey: getGetRateioQueryKey(rateioId) } });
+  const { data: comments, isLoading: loadingComments } = useGetRateioComments(rateioId, { query: { enabled: !!rateioId, queryKey: getGetRateioCommentsQueryKey(rateioId) } });
   const joinRateio = useJoinRateio();
   const addComment = useAddRateioComment();
 
   const handleJoin = () => {
-    joinRateio.mutate({ data: { rateioId, paymentMethod: "pix" } }, {
+    joinRateio.mutate({ id: rateioId }, {
       onSuccess: () => { queryClient.invalidateQueries({ queryKey: getGetRateioQueryKey(rateioId) }); toast({ title: t("rateios.joined") }); },
       onError: () => { toast({ variant: "destructive", title: t("common.error") }); },
     });
@@ -41,7 +41,7 @@ export default function RateioDetail() {
 
   const handleAddComment = () => {
     if (!commentContent.trim()) return;
-    addComment.mutate({ data: { rateioId, content: commentContent } }, {
+    addComment.mutate({ id: rateioId, data: { content: commentContent } }, {
       onSuccess: () => { queryClient.invalidateQueries({ queryKey: getGetRateioCommentsQueryKey(rateioId) }); setCommentContent(""); },
     });
   };

@@ -29,7 +29,7 @@ router.get("/downloads", requireAuth, async (req, res) => {
 // POST /downloads/:grantId/link
 router.post("/downloads/:grantId/link", requireAuth, async (req, res) => {
   const userId = (req as any).user.id;
-  const grantId = parseInt(req.params.grantId);
+  const grantId = parseInt(req.params.grantId as string);
 
   const [grant] = await db.select().from(downloadGrantsTable)
     .where(and(eq(downloadGrantsTable.id, grantId), eq(downloadGrantsTable.userId, userId))).limit(1);

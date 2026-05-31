@@ -70,7 +70,7 @@ router.post("/cart/items", requireAuth, async (req, res) => {
 router.delete("/cart/items/:itemId", requireAuth, async (req, res) => {
   const userId = (req as any).user.id;
   await db.delete(cartItemsTable)
-    .where(and(eq(cartItemsTable.id, parseInt(req.params.itemId)), eq(cartItemsTable.userId, userId)));
+    .where(and(eq(cartItemsTable.id, parseInt(req.params.itemId as string)), eq(cartItemsTable.userId, userId)));
   res.json(await buildCart(userId));
 });
 

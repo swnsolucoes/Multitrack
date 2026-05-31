@@ -6,7 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 export interface HealthStatus {
-  status: string;
+  ok: boolean;
+  database: string;
+  env: string;
 }
 
 export interface MessageResponse {

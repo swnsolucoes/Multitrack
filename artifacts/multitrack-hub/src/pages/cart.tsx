@@ -24,7 +24,7 @@ export default function Cart() {
   const removeCoupon = useRemoveCoupon();
 
   const handleRemove = (id: number) => {
-    removeFromCart.mutate({ data: { productId: id } }, {
+    removeFromCart.mutate({ itemId: id }, {
       onSuccess: () => { queryClient.invalidateQueries({ queryKey: getGetCartQueryKey() }); toast({ title: t("cart.remove_item") }); },
     });
   };
@@ -38,7 +38,7 @@ export default function Cart() {
   };
 
   const handleRemoveCoupon = () => {
-    removeCoupon.mutate({}, {
+    removeCoupon.mutate(undefined, {
       onSuccess: () => { queryClient.invalidateQueries({ queryKey: getGetCartQueryKey() }); toast({ title: t("cart.remove_coupon") }); },
     });
   };

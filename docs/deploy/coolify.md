@@ -194,8 +194,14 @@ Execute cada verificação em sequência. Substitua `multitrack.macarsalao.com.b
 
 ```bash
 curl https://multitrack.macarsalao.com.br/api/healthz
-# Esperado: {"status":"ok"}
+# Esperado: {"ok":true,"database":"ok","env":"production"}
+
+# Alias alternativo:
+curl https://multitrack.macarsalao.com.br/api/health
+# Mesma resposta — use qualquer um para healthchecks externos
 ```
+
+Se `database` retornar `"error"`, o status HTTP será **503** e o banco está inacessível — verifique `DATABASE_URL` e se o container `postgres` está saudável.
 
 ### 7.2 Frontend carregando
 
@@ -273,7 +279,6 @@ docker compose logs web --tail=20
 
 | Item | Problema |
 |---|---|
-| **CORS aberto** | `cors()` sem restrição de origem — ajustar para ler `CORS_ORIGIN` |
 | **Token em localStorage** | Vulnerável a XSS — migrar para cookie httpOnly |
 | **Sem MFA para admin** | Login admin só com email+senha |
 | **Sem audit logs** | Ações admin sem rastreabilidade |

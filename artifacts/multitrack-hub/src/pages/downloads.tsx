@@ -14,7 +14,7 @@ export default function Downloads() {
   const { t } = useTranslation();
 
   const handleDownload = (id: number) => {
-    generateLink.mutate({ data: { productId: id } }, {
+    generateLink.mutate({ grantId: id }, {
       onSuccess: (linkData) => { window.open(linkData.url, "_blank"); },
     });
   };

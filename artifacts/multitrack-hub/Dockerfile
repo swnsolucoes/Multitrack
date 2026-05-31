@@ -1,13 +1,13 @@
 # ─────────────────────────────────────────────
 # Stage 1: Build
 # ─────────────────────────────────────────────
-FROM node:24-alpine AS builder
+FROM node:24-slim AS builder
 
 WORKDIR /workspace
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN npm install -g pnpm@10.26.1 --no-update-notifier
 
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY .npmrc package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.base.json ./
 COPY lib/ ./lib/
 COPY artifacts/multitrack-hub/ ./artifacts/multitrack-hub/
 
@@ -33,8 +33,6 @@ FROM nginx:1.27-alpine AS runtime
 COPY --from=builder /workspace/artifacts/multitrack-hub/dist/public /usr/share/nginx/html
 
 COPY artifacts/multitrack-hub/nginx.conf /etc/nginx/conf.d/default.conf
-
-RUN rm -f /etc/nginx/conf.d/default.conf.bak
 
 EXPOSE 80
 

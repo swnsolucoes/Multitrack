@@ -1,13 +1,13 @@
 # ─────────────────────────────────────────────
 # Stage 1: Build
 # ─────────────────────────────────────────────
-FROM node:24-alpine AS builder
+FROM node:24-slim AS builder
 
 WORKDIR /workspace
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN npm install -g pnpm@10.26.1 --no-update-notifier
 
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY .npmrc package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY lib/ ./lib/
 COPY artifacts/api-server/ ./artifacts/api-server/
 
@@ -20,13 +20,13 @@ RUN node ./build.mjs
 # ─────────────────────────────────────────────
 # Stage 2: Runtime
 # ─────────────────────────────────────────────
-FROM node:24-alpine AS runtime
+FROM node:24-slim AS runtime
 
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN npm install -g pnpm@10.26.1 --no-update-notifier
 
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY .npmrc package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY lib/ ./lib/
 COPY artifacts/api-server/package.json ./artifacts/api-server/package.json
 
@@ -34,7 +34,7 @@ RUN pnpm install --frozen-lockfile --prod
 
 COPY --from=builder /workspace/artifacts/api-server/dist ./artifacts/api-server/dist
 
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN groupadd -r appgroup && useradd -r -g appgroup appuser
 USER appuser
 
 ENV NODE_ENV=production

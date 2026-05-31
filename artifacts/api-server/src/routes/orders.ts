@@ -107,7 +107,7 @@ router.post("/orders", requireAuth, async (req, res) => {
 router.get("/orders/:id", requireAuth, async (req, res) => {
   const userId = (req as any).user.id;
   const [order] = await db.select().from(ordersTable)
-    .where(and(eq(ordersTable.id, parseInt(req.params.id)), eq(ordersTable.userId, userId))).limit(1);
+    .where(and(eq(ordersTable.id, parseInt(req.params.id as string)), eq(ordersTable.userId, userId))).limit(1);
   if (!order) { res.status(404).json({ error: "Order not found" }); return; }
 
   const items = await db.select().from(orderItemsTable)
@@ -128,7 +128,7 @@ router.get("/orders/:id", requireAuth, async (req, res) => {
 // POST /orders/:id/pay
 router.post("/orders/:id/pay", requireAuth, async (req, res) => {
   const [order] = await db.select().from(ordersTable)
-    .where(and(eq(ordersTable.id, parseInt(req.params.id)), eq(ordersTable.userId, (req as any).user.id))).limit(1);
+    .where(and(eq(ordersTable.id, parseInt(req.params.id as string)), eq(ordersTable.userId, (req as any).user.id))).limit(1);
   if (!order) { res.status(404).json({ error: "Order not found" }); return; }
 
   await db.update(ordersTable).set({ status: "paid" }).where(eq(ordersTable.id, order.id));
