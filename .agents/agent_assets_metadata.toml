@@ -18,3 +18,9 @@ id = "ET0-3YQilmeeU9lemnMAP"
 uri = "file://HISTORICO_COMPLETO.md"
 type = "text"
 title = "Histórico Completo do Projeto — MultiTrack Hub"
+
+[[outputs]]
+id = "tEaQ3jWBtormuai1BbBXG"
+uri = "file://RELATORIO_COOLIFY_MULTITRACK.md"
+type = "text"
+title = "Relatório de Auditoria — Coolify Deploy (MultiTrack Hub)"
