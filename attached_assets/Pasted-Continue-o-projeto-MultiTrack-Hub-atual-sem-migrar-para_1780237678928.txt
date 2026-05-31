@@ -1,0 +1,182 @@
+Continue o projeto MultiTrack Hub atual, sem migrar para PayloadCMS neste momento.
+
+Contexto:
+O projeto MultiTrack Hub foi desenvolvido no Replit e já possui frontend React/Vite, backend Express/Node, PostgreSQL, Drizzle ORM, OpenAPI/codegen, carrinho, checkout simulado, pedidos, downloads, assinatura, créditos, rateios, wishlist e painel admin.
+
+Decisão atual:
+Não vamos usar PayloadCMS agora para economizar créditos e evitar reescrever o projeto. Vamos continuar com a base atual e preparar o projeto para rodar em uma VPS própria usando Coolify.
+
+Ambiente de destino:
+
+* VPS com Ubuntu;
+* Docker e Coolify instalados;
+* arquitetura ARM64;
+* painel Coolify em painel.macarsalao.com.br;
+* o site/app deverá usar outro subdomínio, por exemplo multitrack.macarsalao.com.br;
+* objetivo inicial é staging/produção técnica, não venda real ainda.
+
+Objetivo desta tarefa:
+Preparar o projeto atual para rodar fora do Replit, usando Docker/Compose, PostgreSQL próprio e configuração organizada de variáveis de ambiente para Coolify.
+
+Faça em duas fases.
+
+FASE 1 — Auditoria rápida obrigatória
+
+Antes de modificar arquivos, analise a estrutura real do projeto e crie um relatório chamado:
+
+RELATORIO_COOLIFY_MULTITRACK.md
+
+O relatório deve conter:
+
+1. Estrutura real do projeto:
+
+   * frontend;
+   * backend;
+   * libs compartilhadas;
+   * scripts;
+   * banco;
+   * migrações;
+   * variáveis de ambiente usadas.
+
+2. Scripts disponíveis:
+
+   * install;
+   * dev;
+   * build;
+   * start;
+   * lint;
+   * typecheck;
+   * test;
+   * migrate;
+   * seed;
+   * codegen, se existir.
+
+3. Dependências do Replit que precisam ser removidas ou adaptadas:
+
+   * proxy automático;
+   * workflows;
+   * portas dinâmicas;
+   * banco provisionado;
+   * secrets;
+   * variáveis automáticas;
+   * qualquer configuração específica do ambiente Replit.
+
+4. Riscos para rodar fora do Replit:
+
+   * build;
+   * banco de dados;
+   * sessão/autenticação;
+   * CORS;
+   * cookies;
+   * download;
+   * checkout simulado;
+   * storage;
+   * uploads;
+   * arquivos estáticos;
+   * variáveis ausentes.
+
+5. Verificação de Node.js:
+
+   * padronizar Node.js 24 LTS;
+   * criar ou atualizar .nvmrc;
+   * criar ou atualizar .node-version, se fizer sentido;
+   * atualizar engines no package.json;
+   * garantir uso de pnpm/corepack.
+
+FASE 2 — Preparação inicial para Coolify
+
+Se a auditoria não encontrar bloqueio grave, crie a estrutura mínima para deploy em Coolify.
+
+Crie ou ajuste:
+
+1. Dockerfile do backend:
+
+   * usar Node.js 24 LTS;
+   * instalar dependências com pnpm;
+   * buildar TypeScript, se necessário;
+   * rodar em NODE_ENV=production;
+   * expor a porta interna correta da API;
+   * incluir healthcheck, se possível;
+   * evitar usuário root, se possível.
+
+2. Dockerfile do frontend:
+
+   * buildar o frontend React/Vite;
+   * servir o build com Nginx;
+   * configurar fallback para SPA;
+   * encaminhar /api para o backend;
+   * preservar headers necessários;
+   * funcionar com o proxy do Coolify.
+
+3. docker-compose.yml:
+
+   * serviço web/frontend;
+   * serviço api/backend;
+   * serviço postgres;
+   * volumes persistentes;
+   * rede interna;
+   * healthchecks;
+   * depends_on adequado;
+   * variáveis obrigatórias;
+   * não expor PostgreSQL publicamente;
+   * expor apenas o serviço web para o proxy do Coolify.
+
+4. .env.example:
+   Incluir todas as variáveis necessárias, sem secrets reais, por exemplo:
+
+   * NODE_ENV;
+   * APP_URL;
+   * API_URL ou API_PUBLIC_URL;
+   * DATABASE_URL;
+   * POSTGRES_USER;
+   * POSTGRES_PASSWORD;
+   * POSTGRES_DB;
+   * SESSION_SECRET;
+   * CORS_ORIGIN;
+   * COOKIE_DOMAIN, se necessário;
+   * todas as variáveis já existentes no projeto.
+
+5. Documentação:
+   Criar docs/deploy/coolify.md explicando:
+
+   * como criar o projeto no Coolify;
+   * qual subdomínio usar;
+   * quais variáveis configurar;
+   * como subir PostgreSQL;
+   * como rodar migrações;
+   * como testar /api/health;
+   * como testar frontend;
+   * como testar login;
+   * como testar catálogo;
+   * como testar carrinho;
+   * como testar pedido;
+   * o que ainda não deve ser usado em produção real.
+
+Regras importantes:
+
+* Não migrar para PayloadCMS.
+* Não reescrever o projeto.
+* Não criar novas funcionalidades.
+* Não implementar pagamento real agora.
+* Não implementar storage real agora.
+* Não alterar layout sem necessidade.
+* Não alterar regra de negócio sem necessidade.
+* Não usar secrets reais.
+* Não fazer deploy.
+* Não fazer commit.
+* Não apagar arquivos.
+* Não rodar migração destrutiva.
+* Não liberar checkout simulado como produção real.
+* Não declarar que o projeto está pronto para venda se ainda houver checkout simulado, senha insegura, sessão insegura ou download sem proteção real.
+* Manter as mudanças pequenas, objetivas e revisáveis.
+
+Ao final, entregue um resumo com:
+
+1. arquivos criados;
+2. arquivos alterados;
+3. comandos executados;
+4. resultado do build;
+5. resultado de lint/typecheck/test, se existirem;
+6. instruções para configurar no Coolify;
+7. pendências críticas antes de venda real;
+8. próximo prompt recomendado.
