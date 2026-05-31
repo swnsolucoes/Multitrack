@@ -1,0 +1,70 @@
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: multitrack_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-multitrack}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-multitrack_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - multitrack-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-multitrack} -d ${POSTGRES_DB:-multitrack_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  api:
+    build:
+      context: .
+      dockerfile: artifacts/api-server/Dockerfile
+    container_name: multitrack_api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 8080
+      DATABASE_URL: ${DATABASE_URL}
+      SESSION_SECRET: ${SESSION_SECRET}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost}
+    networks:
+      - multitrack-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/api/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  web:
+    build:
+      context: .
+      dockerfile: artifacts/multitrack-hub/Dockerfile
+      args:
+        PORT: 80
+        BASE_PATH: /
+        NODE_ENV: production
+    container_name: multitrack_web
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    networks:
+      - multitrack-net
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  multitrack-net:
+    driver: bridge
