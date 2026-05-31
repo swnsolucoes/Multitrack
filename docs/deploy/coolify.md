@@ -49,7 +49,8 @@ artifacts/multitrack-hub/nginx.conf
 
 | Arquivo | Função |
 |---|---|
-| `docker-compose.yml` | Orquestra 3 serviços: `web`, `api`, `postgres` |
+| `docker-compose.yml` | Orquestra 4 serviços: `web`, `api`, `postgres`, `migrate` |
+| `Dockerfile.migrate` | Container one-shot com todas as deps (dev incluído) para rodar `drizzle-kit push` |
 | `artifacts/api-server/Dockerfile` | Build esbuild + runtime Node 24 LTS, usuário não-root, porta 8080 |
 | `artifacts/multitrack-hub/Dockerfile` | Build Vite + Nginx com proxy `/api/` e SPA fallback |
 | `artifacts/multitrack-hub/nginx.conf` | Configuração Nginx: proxy, cache, headers de segurança |
@@ -155,25 +156,28 @@ docker compose exec postgres pg_isready -U multitrack -d multitrack_db
 
 ## 6. Rodar as migrações
 
-Após o primeiro deploy, o banco estará vazio. Rode o `drizzle-kit push` para criar as tabelas:
+Após o primeiro deploy, o banco estará vazio. O serviço `migrate` é dedicado para isso — ele
+inclui todas as dependências de dev (incluindo `drizzle-kit`) e roda `drizzle-kit push` uma
+única vez contra o banco.
+
+> **Por que não usar `docker compose exec api ...`?** O container `api` de runtime usa apenas
+> o bundle compilado (`dist/index.mjs`) e dependências de produção. O `drizzle-kit` é uma
+> devDependency que **não existe** na imagem de runtime. O serviço `migrate` tem um Dockerfile
+> próprio (`Dockerfile.migrate`) que instala tudo, incluindo devDependencies.
 
 ```bash
-# Rodar a partir da VPS, após os containers estarem up
-docker compose exec api node -e "
-  process.env.DATABASE_URL = process.env.DATABASE_URL;
-"
+# Garantir que o postgres está rodando e saudável primeiro
+docker compose up -d postgres
+docker compose ps postgres
+# Aguardar até aparecer: healthy
 
-# Comando para aplicar o schema:
-docker compose exec api sh -c "cd /workspace && pnpm --filter @workspace/db run push"
-```
+# Rodar as migrações (container separado com todas as deps)
+docker compose --profile migrate run --rm migrate
+# Esperado: drizzle-kit push aplicado com sucesso, tabelas criadas
 
-> **Alternativa (se o comando acima não funcionar no container de runtime):**
-> Como o container `api` usa apenas o `dist/` compilado, rode as migrações
-> em um container temporário de build:
-
-```bash
-docker compose run --rm --entrypoint sh api -c \
-  "cd /workspace && pnpm --filter @workspace/db run push"
+# Verificar as tabelas criadas
+docker compose exec postgres psql -U multitrack -d multitrack_db -c "\dt"
+# Deve listar: users, sessions, products, orders, ... (19 tabelas)
 ```
 
 > **Nota sobre migrações:** O projeto usa `drizzle-kit push` que aplica o schema diretamente

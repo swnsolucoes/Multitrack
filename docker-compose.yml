@@ -61,6 +61,21 @@ services:
       api:
         condition: service_healthy
 
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile.migrate
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    networks:
+      - multitrack-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - migrate
+    restart: "no"
+
 volumes:
   postgres_data:
     driver: local

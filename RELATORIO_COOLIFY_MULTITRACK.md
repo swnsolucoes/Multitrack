@@ -231,9 +231,11 @@ O `vite.config.ts` carrega plugins condicionalmente:
 
 | Arquivo | Descrição |
 |---|---|
+| `Dockerfile.migrate` | Container one-shot com devDeps para executar `drizzle-kit push` |
 | `artifacts/api-server/Dockerfile` | Build esbuild + runtime Node 24 LTS |
 | `artifacts/multitrack-hub/Dockerfile` | Build Vite + Nginx com proxy /api e SPA fallback |
-| `docker-compose.yml` | Orquestração: web + api + postgres |
+| `artifacts/multitrack-hub/nginx.conf` | Nginx: proxy /api, SPA fallback, cache, headers de segurança |
+| `docker-compose.yml` | Orquestração: web + api + postgres + migrate (profile) |
 | `.env.example` | Variáveis documentadas (sem secrets reais) |
 | `docs/deploy/coolify.md` | Guia completo de deploy no Coolify |
 
