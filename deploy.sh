@@ -10,6 +10,9 @@ echo "========================================="
 
 cd "$PROJECT_DIR"
 
+# Fix git safe.directory dentro do container
+git config --global --add safe.directory "$PROJECT_DIR" 2>/dev/null || true
+
 echo ""
 echo "[1/4] Atualizando codigo do GitHub..."
 git pull origin main
