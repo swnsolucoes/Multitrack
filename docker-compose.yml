@@ -30,7 +30,7 @@ services:
       PORT: 8080
       DATABASE_URL: ${DATABASE_URL}
       SESSION_SECRET: ${SESSION_SECRET}
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost}
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://multitrack.macarsalao.com.br}
     networks:
       - multitrack-net
     depends_on:
@@ -53,8 +53,8 @@ services:
         NODE_ENV: production
     container_name: multitrack_web
     restart: unless-stopped
-    ports:
-      - "80:80"
+    expose:
+      - "80"
     networks:
       - multitrack-net
     depends_on:
