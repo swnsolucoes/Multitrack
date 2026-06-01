@@ -2,6 +2,11 @@
 """
 Webhook receiver para auto-deploy do GitHub.
 Valida assinatura HMAC-SHA256 e roda o deploy em background.
+
+AVISO DE SEGURANÇA: Este container monta /var/run/docker.sock,
+o que concede controle total sobre o Docker do host.
+Mantenha WEBHOOK_SECRET rotacionado e o container isolado na rede interna.
+Prefira usar o deploy nativo do Coolify/GitHub Actions quando disponível.
 """
 import http.server
 import hmac
@@ -26,10 +31,18 @@ DEPLOY_SCRIPT  = os.path.join(PROJECT_DIR, "deploy.sh")
 PORT           = int(os.environ.get("WEBHOOK_PORT", "9001"))
 
 
-def validate_signature(body: bytes, signature: str) -> bool:
+def _startup_check():
+    """Falha em inicialização se WEBHOOK_SECRET não estiver configurado."""
     if not WEBHOOK_SECRET:
-        log.warning("WEBHOOK_SECRET não configurado!")
-        return False
+        log.error(
+            "WEBHOOK_SECRET não configurado! "
+            "O servidor se recusa a iniciar sem segredo HMAC. "
+            "Defina a variável de ambiente WEBHOOK_SECRET."
+        )
+        sys.exit(1)
+
+
+def validate_signature(body: bytes, signature: str) -> bool:
     expected = "sha256=" + hmac.new(
         WEBHOOK_SECRET.encode(), body, hashlib.sha256
     ).hexdigest()
@@ -105,18 +118,20 @@ class WebhookHandler(http.server.BaseHTTPRequestHandler):
         log.info("Push no main detectado! Disparando deploy...")
         self.send_response(202)
         self.end_headers()
-        self.wfile.write(b"Deploy iniciado!")
+        self.wfile.write(b"Accepted")
 
         thread = threading.Thread(target=run_deploy, daemon=True)
         thread.start()
 
     def do_GET(self):
+        # Resposta mínima — não expõe detalhes do sistema
         self.send_response(200)
         self.end_headers()
-        self.wfile.write(b"MultiTrack Webhook OK")
+        self.wfile.write(b"ok")
 
 
 if __name__ == "__main__":
+    _startup_check()
     log.info(f"Webhook server escutando na porta {PORT}...")
     server = http.server.HTTPServer(("0.0.0.0", PORT), WebhookHandler)
     server.serve_forever()
