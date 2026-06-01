@@ -836,4 +836,227 @@ curl localhost:80/api/health
 
 ---
 
-*Documentação gerada em maio de 2026 — MultiTrack Hub v1.0*
+## 15. Infraestrutura de Produção
+
+### Visão geral
+
+```
+Usuário
+  │ HTTPS
+  ▼
+Cloudflare (DNS + Proxy)
+  │ Tunnel (TCP)
+  ▼
+VPS prata.zzux.com  (x86_64 Ubuntu)
+  │
+  ▼
+Coolify  ──► coolify-proxy (Traefik)  ←── detecta labels Docker automaticamente
+                │
+                ├── /           → multitrack_web  (Nginx :80)
+                │                     │ /api/*
+                │                     ▼
+                │               multitrack_api  (Express :8080)
+                │                     │
+                │                     ▼
+                │               multitrack_postgres  (PostgreSQL :5432)
+                │
+                └── /hooks      → multitrack_webhook  (Python :9001)
+```
+
+### Dados do VPS
+
+| Item | Valor |
+|---|---|
+| Host | `prata.zzux.com` |
+| Usuário | `root` |
+| Chave SSH | `~/.ssh/vps_key` (ed25519) |
+| Arquitetura | **x86_64** (Intel/AMD 64-bit) |
+| Diretório do projeto | `/opt/multitrack/` |
+| Painel Coolify | `https://painel.macarsalao.com.br` |
+
+### Como acessar o VPS
+
+```bash
+ssh -i ~/.ssh/vps_key root@prata.zzux.com
+```
+
+### Containers Docker em produção
+
+| Container | Imagem | Função |
+|---|---|---|
+| `multitrack_web` | `multitrack-web` (Nginx) | Serve o frontend React |
+| `multitrack_api` | `multitrack-api` (Node.js 24) | API Express backend |
+| `multitrack_postgres` | `postgres:16-alpine` | Banco de dados |
+| `multitrack_webhook` | `multitrack-webhook` (Python) | Recebe webhooks do GitHub |
+
+### Arquivos de configuração Docker no VPS
+
+```
+/opt/multitrack/
+├── docker-compose.yml                    # Serviços base (web, api, postgres, migrate)
+├── docker-compose.coolify-override.yml   # Labels Traefik + serviço webhook
+├── Dockerfile.migrate                    # Container para rodar migrações
+├── Dockerfile.webhook                    # Container do servidor webhook
+├── webhook_server.py                     # Servidor Python para o webhook
+├── deploy.sh                             # Script de deploy automático
+└── .env                                  # Variáveis de ambiente (NÃO commitado)
+```
+
+### Variáveis de ambiente em produção
+
+Ficam no arquivo `/opt/multitrack/.env` no VPS. As principais:
+
+| Variável | Descrição |
+|---|---|
+| `DATABASE_URL` | `postgresql://multitrack:SENHA@postgres:5432/multitrack_db` |
+| `SESSION_SECRET` | Segredo para hash de senhas (SHA-256) |
+| `CORS_ORIGIN` | `https://multitrack.macarsalao.com.br` |
+| `WEBHOOK_SECRET` | Segredo HMAC para validar webhooks do GitHub |
+| `POSTGRES_USER` / `_PASSWORD` / `_DB` | Credenciais do PostgreSQL |
+
+> **Nunca commite o `.env` com valores reais.** Use `.env.example` para documentar a estrutura.
+
+### Repositório GitHub
+
+| Item | Valor |
+|---|---|
+| Repositório | `https://github.com/swnsolucoes/Multitrack` |
+| Branch principal | `main` |
+| Webhook configurado | `https://multitrack.macarsalao.com.br/hooks/deploy` |
+
+---
+
+## 16. Auto-deploy (GitHub → VPS)
+
+### Como funciona
+
+Qualquer `git push` para a branch `main` dispara automaticamente o deploy em produção:
+
+```
+git push origin main
+  │
+  ▼
+GitHub detecta push na branch main
+  │
+  ▼
+GitHub envia POST HTTPS para /hooks/deploy
+  │   (com assinatura HMAC-SHA256)
+  ▼
+multitrack_webhook (Python :9001)
+  │  valida assinatura → dispara deploy em thread background
+  ▼
+deploy.sh
+  ├── git pull origin main         (atualiza o código no VPS)
+  ├── docker compose build api web (reconstrói as imagens)
+  ├── docker compose up -d api web postgres (sobe os novos containers)
+  └── aguarda API ficar healthy    (até 2 minutos)
+```
+
+### Tempo médio de deploy
+
+~45–90 segundos (a maior parte é o build Docker com cache).
+
+### Monitorar um deploy em andamento
+
+```bash
+ssh -i ~/.ssh/vps_key root@prata.zzux.com
+docker logs -f multitrack_webhook
+```
+
+### Testar manualmente (sem precisar fazer push)
+
+```bash
+# Usar a URL de teste do GitHub (simula um push no main)
+curl -X POST \
+  -H "Authorization: token SEU_GITHUB_TOKEN" \
+  https://api.github.com/repos/swnsolucoes/Multitrack/hooks/634806682/test
+```
+
+### Detalhes do componente webhook
+
+| Arquivo | Função |
+|---|---|
+| `Dockerfile.webhook` | python:3.12-slim + git + docker CLI x86_64 + compose plugin v2.29.7 |
+| `webhook_server.py` | Servidor HTTP Python — valida HMAC, roda deploy em thread |
+| `deploy.sh` | git pull + build api/web + up (webhook excluído para evitar recursão) |
+| `docker-compose.coolify-override.yml` | Define o serviço webhook + labels Traefik HTTPS |
+
+> **Por que o webhook não reconstrói a si mesmo?** Se o `deploy.sh` incluísse o serviço `webhook` no `docker compose up -d`, ele mataria o próprio container que está rodando o script. Por isso `deploy.sh` faz `build api web` e `up -d api web postgres` explicitamente.
+
+---
+
+## 17. Guia para Modificações Futuras
+
+### Fazer uma alteração no código
+
+```bash
+# 1. Faça suas edições no Replit (ou localmente)
+
+# 2. Commite e faça push para o main
+git add .
+git commit -m "feat: descrição da mudança"
+git push origin main
+
+# 3. O deploy acontece automaticamente em ~1 minuto
+# Monitore com:
+ssh -i ~/.ssh/vps_key root@prata.zzux.com 'docker logs -f multitrack_webhook'
+```
+
+### Adicionar uma nova tabela ao banco
+
+1. Crie o schema em `lib/db/src/schema/nova-tabela.ts`
+2. Exporte-o em `lib/db/src/index.ts`
+3. Em desenvolvimento, rode `pnpm --filter @workspace/db run push`
+4. Em produção, o container `migrate` do `docker-compose.yml` roda automaticamente no deploy
+
+### Adicionar um novo endpoint à API
+
+1. Crie ou edite o arquivo em `artifacts/api-server/src/routes/`
+2. Registre a rota em `artifacts/api-server/src/routes/index.ts`
+3. Atualize o OpenAPI spec em `lib/api-spec/openapi.yaml`
+4. Rode codegen: `pnpm --filter @workspace/api-spec run codegen`
+5. Faça push → deploy automático
+
+### Adicionar uma nova página no frontend
+
+1. Crie o componente em `artifacts/multitrack-hub/src/pages/`
+2. Registre a rota em `artifacts/multitrack-hub/src/main.tsx`
+3. Adicione as traduções em `src/locales/pt.json` e `src/locales/en.json`
+4. Faça push → deploy automático
+
+### Alterar dados de seed (banco de desenvolvimento)
+
+```bash
+# Editar o script de seed
+# artifacts/api-server/src/seed.ts (ou script equivalente)
+
+# Rodar no Replit
+pnpm --filter @workspace/db run seed
+```
+
+### Inserir dados no banco de produção diretamente
+
+```bash
+ssh -i ~/.ssh/vps_key root@prata.zzux.com
+
+# Acessar o PostgreSQL
+docker exec -it multitrack_postgres \
+  psql -U multitrack -d multitrack_db
+
+# Exemplo — criar usuário admin extra:
+INSERT INTO users (name, email, password_hash, role)
+VALUES ('Nome', 'email@dominio.com',
+  encode(sha256(('senha' || current_setting('app.session_secret'))::bytea), 'hex'),
+  'admin');
+
+# Ou gerar o hash externamente:
+python3 -c "
+import hashlib, os
+secret = 'SEU_SESSION_SECRET'
+print(hashlib.sha256(('suasenha' + secret).encode()).hexdigest())
+"
+```
+
+---
+
+*Documentação atualizada em junho de 2026 — MultiTrack Hub v1.1*
