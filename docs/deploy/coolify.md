@@ -1,15 +1,18 @@
 # Guia de Deploy — MultiTrack Hub no Coolify
 
 > Ambiente-alvo: VPS Ubuntu com Docker + Coolify instalados (**x86_64**)
-> VPS: `root@prata.zzux.com` | Chave SSH: `~/.ssh/vps_key`
 > Painel Coolify: `painel.macarsalao.com.br`
 > App: `multitrack.macarsalao.com.br`
 > Repositório: `https://github.com/swnsolucoes/Multitrack`
-> Status atual: **em produção** ✅
+> Status atual: **staging técnico** ⚠️ — não pronto para venda real
 
-## Estado atual de produção
+> **🚨 NÃO USAR COM CLIENTES PAGANTES** enquanto os seguintes itens não forem concluídos:
+> pagamento real (gateway), downloads reais (storage), senha segura (bcrypt/argon2id) e LGPD.
+> Ver seção [Pendências críticas](#8-pendências-críticas-antes-de-venda-real).
 
-O deploy já está configurado e operacional. Os containers abaixo estão rodando:
+## Estado atual de infraestrutura
+
+Os containers estão configurados e operacionais:
 
 | Container | Status |
 |---|---|
@@ -18,7 +21,13 @@ O deploy já está configurado e operacional. Os containers abaixo estão rodand
 | `multitrack_postgres` | healthy |
 | `multitrack_webhook` | up (auto-deploy ativo) |
 
-**Para atualizações**, basta fazer `git push origin main` — o deploy acontece automaticamente via webhook em ~60–90s. Ver seção [Auto-deploy](#auto-deploy) abaixo.
+**Para atualizações**, basta fazer `git push origin main` — o deploy acontece automaticamente via webhook em ~60–90s.
+
+> **⚠️ Risco de segurança — docker.sock:** O container `multitrack_webhook` monta
+> `/var/run/docker.sock`, o que concede controle total sobre o Docker do host ao processo
+> Python dentro do container. Mantenha `WEBHOOK_SECRET` rotacionado regularmente,
+> restrinja o acesso de rede ao container e prefira o deploy nativo do Coolify ou
+> GitHub Actions quando possível. Documente a rotação do segredo em runbook interno.
 
 ---
 
@@ -127,7 +136,7 @@ docker compose logs -f
 
 No painel do Coolify, vá em **Environment Variables** do projeto e adicione:
 
-| Variável | Valor exemplo | Obrigatória |
+| Variável | Valor em produção | Obrigatória |
 |---|---|---|
 | `NODE_ENV` | `production` | Sim |
 | `APP_URL` | `https://multitrack.macarsalao.com.br` | Sim |
@@ -137,6 +146,14 @@ No painel do Coolify, vá em **Environment Variables** do projeto e adicione:
 | `POSTGRES_DB` | `multitrack_db` | Sim |
 | `DATABASE_URL` | `postgresql://multitrack:SENHA@postgres:5432/multitrack_db` | Sim |
 | `SESSION_SECRET` | *(valor aleatório seguro)* | Sim |
+| `ALLOW_FAKE_PAYMENTS` | `false` | Sim — manter `false` em produção |
+| `ALLOW_FAKE_SUBSCRIPTIONS` | `false` | Sim — manter `false` em produção |
+| `ENABLE_FAKE_DOWNLOAD_LINKS` | `false` | Sim — manter `false` em produção |
+| `WEBHOOK_SECRET` | *(valor aleatório seguro)* | Obrigatório se usar auto-deploy |
+
+> **⚠️ Flags de simulação:** `ALLOW_FAKE_PAYMENTS`, `ALLOW_FAKE_SUBSCRIPTIONS` e
+> `ENABLE_FAKE_DOWNLOAD_LINKS` devem ser `false` em produção com clientes reais.
+> Defina `true` apenas em development/staging controlado para testes.
 
 ### Gerar valores seguros para secrets
 
@@ -245,15 +262,27 @@ Acesse no browser: `https://multitrack.macarsalao.com.br`
 4. Teste aplicar o cupom `BEMVINDO10`
 5. ✅ O desconto de 10% deve aparecer
 
-### 7.6 Pedido (checkout simulado)
+### 7.6 Pedido (checkout — staging com flags)
+
+> ⚠️ O checkout é **simulado** — nenhum pagamento real é processado.
+> Em produção (`NODE_ENV=production`) com as flags padrão (`false`), os endpoints
+> `/orders/:id/pay`, `/subscriptions/me` (POST) e `/downloads/:grantId/link` retornam
+> **HTTP 403** bloqueando o fluxo simulado. Para testar em staging, defina as flags no `.env`.
+
+**Fluxo em development/staging (com flags `true`):**
 
 1. Finalize a compra pelo carrinho
 2. Selecione "Pix" como método
-3. ✅ Um pedido deve ser criado
-4. ✅ Em `/orders` o pedido deve aparecer como "Pago"
-5. ✅ Em `/downloads` o arquivo deve aparecer disponível
+3. ✅ Um pedido é criado com status `pending`
+4. POST `/orders/:id/pay` marca como `paid` e cria download grants
+5. ✅ Em `/orders` o pedido aparece como "Pago"
+6. ✅ Em `/downloads` os arquivos aparecem disponíveis (links placeholder)
 
-> ⚠️ O checkout é **simulado** — nenhum pagamento real é processado.
+**Em produção real (flags `false`):**
+
+1. Pedido criado com status `pending` → aguarda webhook do gateway
+2. `/orders/:id/pay` → HTTP 403 (bloqueado)
+3. Downloads → HTTP 403 (bloqueado até storage real ser configurado)
 
 ### 7.7 Painel Admin
 
