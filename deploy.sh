@@ -18,12 +18,12 @@ echo "[1/4] Atualizando codigo do GitHub..."
 git pull origin main
 
 echo ""
-echo "[2/4] Build das imagens Docker..."
-docker compose $COMPOSE_FILES build
+echo "[2/4] Build das imagens Docker (excluindo webhook)..."
+docker compose $COMPOSE_FILES build api web
 
 echo ""
-echo "[3/4] Subindo servicos (migracoes automaticas)..."
-docker compose $COMPOSE_FILES up -d --remove-orphans
+echo "[3/4] Subindo servicos (excluindo webhook para evitar auto-reinicializacao)..."
+docker compose $COMPOSE_FILES up -d --remove-orphans api web postgres
 
 echo ""
 echo "[4/4] Aguardando API ficar saudavel..."
