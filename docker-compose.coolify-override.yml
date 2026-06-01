@@ -1,0 +1,65 @@
+services:
+  api:
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:8080/api/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  web:
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://0.0.0.0:80/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - multitrack-net
+      - coolify
+    labels:
+      traefik.enable: "true"
+      traefik.http.middlewares.gzip.compress: "true"
+      traefik.http.middlewares.redirect-to-https.redirectscheme.scheme: "https"
+      traefik.http.routers.multitrack-http.entryPoints: "http"
+      traefik.http.routers.multitrack-http.middlewares: "redirect-to-https"
+      traefik.http.routers.multitrack-http.rule: "Host(`multitrack.macarsalao.com.br`) && PathPrefix(`/`)"
+      traefik.http.routers.multitrack-http.service: "multitrack-http"
+      traefik.http.routers.multitrack-https.entryPoints: "https"
+      traefik.http.routers.multitrack-https.middlewares: "gzip"
+      traefik.http.routers.multitrack-https.rule: "Host(`multitrack.macarsalao.com.br`) && PathPrefix(`/`)"
+      traefik.http.routers.multitrack-https.service: "multitrack-https"
+      traefik.http.routers.multitrack-https.tls: "true"
+      traefik.http.services.multitrack-http.loadbalancer.server.port: "80"
+      traefik.http.services.multitrack-https.loadbalancer.server.port: "80"
+
+  webhook:
+    build:
+      context: .
+      dockerfile: Dockerfile.webhook
+    container_name: multitrack_webhook
+    restart: unless-stopped
+    environment:
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET}
+      WEBHOOK_PORT: "9001"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /opt/multitrack:/opt/multitrack
+    networks:
+      - multitrack-net
+      - coolify
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.webhook-http.entryPoints: "http"
+      traefik.http.routers.webhook-http.rule: "Host(`multitrack.macarsalao.com.br`) && PathPrefix(`/hooks`)"
+      traefik.http.routers.webhook-http.middlewares: "redirect-to-https"
+      traefik.http.routers.webhook-http.service: "webhook"
+      traefik.http.routers.webhook-https.entryPoints: "https"
+      traefik.http.routers.webhook-https.rule: "Host(`multitrack.macarsalao.com.br`) && PathPrefix(`/hooks`)"
+      traefik.http.routers.webhook-https.service: "webhook"
+      traefik.http.routers.webhook-https.tls: "true"
+      traefik.http.services.webhook.loadbalancer.server.port: "9001"
+
+networks:
+  coolify:
+    external: true
