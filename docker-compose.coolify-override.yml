@@ -50,10 +50,6 @@ services:
       - coolify
     labels:
       traefik.enable: "true"
-      traefik.http.routers.webhook-http.entryPoints: "http"
-      traefik.http.routers.webhook-http.rule: "Host(`multitrack.macarsalao.com.br`) && PathPrefix(`/hooks`)"
-      traefik.http.routers.webhook-http.middlewares: "redirect-to-https"
-      traefik.http.routers.webhook-http.service: "webhook"
       traefik.http.routers.webhook-https.entryPoints: "https"
       traefik.http.routers.webhook-https.rule: "Host(`multitrack.macarsalao.com.br`) && PathPrefix(`/hooks`)"
       traefik.http.routers.webhook-https.service: "webhook"
