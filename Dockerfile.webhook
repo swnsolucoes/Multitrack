@@ -1,0 +1,20 @@
+FROM python:3.12-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    curl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL https://download.docker.com/linux/static/stable/aarch64/docker-27.3.1.tgz \
+    | tar xz --strip-components=1 -C /usr/local/bin docker/docker
+
+WORKDIR /opt/multitrack
+
+COPY webhook_server.py .
+COPY deploy.sh .
+RUN chmod +x deploy.sh
+
+EXPOSE 9001
+
+CMD ["python3", "webhook_server.py"]
