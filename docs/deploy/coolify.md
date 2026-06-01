@@ -1,9 +1,24 @@
 # Guia de Deploy — MultiTrack Hub no Coolify
 
-> Ambiente-alvo: VPS Ubuntu com Docker + Coolify instalados (ARM64)
+> Ambiente-alvo: VPS Ubuntu com Docker + Coolify instalados (**x86_64**)
+> VPS: `root@prata.zzux.com` | Chave SSH: `~/.ssh/vps_key`
 > Painel Coolify: `painel.macarsalao.com.br`
 > App: `multitrack.macarsalao.com.br`
-> Objetivo: staging / produção técnica — **não venda real ainda**
+> Repositório: `https://github.com/swnsolucoes/Multitrack`
+> Status atual: **em produção** ✅
+
+## Estado atual de produção
+
+O deploy já está configurado e operacional. Os containers abaixo estão rodando:
+
+| Container | Status |
+|---|---|
+| `multitrack_web` | healthy |
+| `multitrack_api` | healthy |
+| `multitrack_postgres` | healthy |
+| `multitrack_webhook` | up (auto-deploy ativo) |
+
+**Para atualizações**, basta fazer `git push origin main` — o deploy acontece automaticamente via webhook em ~60–90s. Ver seção [Auto-deploy](#auto-deploy) abaixo.
 
 ---
 
